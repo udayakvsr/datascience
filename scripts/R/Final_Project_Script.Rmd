@@ -1,0 +1,207 @@
+---
+title: "Final_Project-DS-510 "
+author: "Uday"
+date: "2022-11-10"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+## Installing the required software and utilizing it in the code:
+```{r package setup}
+install.packages("tinytex", repos = "http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+install.packages("tidyr", repos = "http://cran.us.r-project.org")
+install.packages("magrittr", repos = "http://cran.us.r-project.org")
+install.packages("knitr", repos = "http://cran.us.r-project.org")
+install.packages("glmnet", repos = "http://cran.us.r-project.org")
+install.packages("leaps", repos = "http://cran.us.r-project.org")
+install.packages("gvlma", repos = "http://cran.us.r-project.org")
+install.packages("psych", repos = "http://cran.us.r-project.org")
+install.packages("latticeExtra", repos = "http://cran.us.r-project.org")
+install.packages("caret", repos = "http://cran.us.r-project.org")
+library(knitr)
+library(magrittr)
+library(leaps)
+library(gvlma)
+library(glmnet)
+library(psych)
+library(caret)
+library(latticeExtra)
+library(dplyr)
+library(tidyr)
+```
+##the auto-mpg.csv file for reading:
+```{r csv setup}
+atodf_main =  read.csv("C:/Users/Public/project/auto-mpg.csv")
+str(atodf_main)
+```
+##Data transformation
+```{r rule setup}
+names(atodf_main) = c("mpg","cylinder","displacement","horsepower","weight","acceleration","model_year","origin","car_name")
+head(atodf_main) 
+atodf_main$horsepower[atodf_main$horsepower=="?"] = NA
+atodf_main$horsepower = as.numeric(atodf_main$horsepower)
+atodf_main$cylinder = as.numeric(atodf_main$cylinder)
+str(atodf_main)
+```
+##Choosing the necessary data:
+```{r filter setup}
+main_data = select(atodf_main,mpg,displacement,horsepower,weight,acceleration)
+main_data = na.omit(main_data)
+kable(summary(main_data),row.names = FALSE)
+pairs.panels(main_data,method = "pearson",hist.col ="#00AFBB" ,density = TRUE,ellipses = TRUE)  #Important charts & plots: 
+par(mfrow=c(2,2))
+for (i in names(main_data)) {
+   boxplot(main_data[,i], names = "names(main_data[,i])")
+}
+```
+##300 and 98 records were split:
+```{r split setup}
+auto.three_hudrd = main_data[1:300,]
+auto.nity_eight = na.omit(main_data[301:398,])
+```
+##Model of displacement for 300 records:
+```{r DISPLACEMENT setup}
+modelchk.dis = lm(mpg~displacement, data=auto.three_hudrd)
+summary(modelchk.dis)
+fnlchk_dis = summary(modelchk.dis)
+fnlchk_dis$r.squared                      
+fnlchk_dis$adj.r.squared                  
+coef(fnlchk_dis)                          
+coef(modelchk.dis)                          
+```
+##Model of horsepower for 300 records:
+```{r Model of horsepower}
+modelchk.hrp = lm(mpg~horsepower, data=auto.three_hudrd)
+summary(modelchk.hrp)
+finalchk_hrp = summary(modelchk.hrp)   
+finalchk_hrp$r.squared                      
+finalchk_hrp$adj.r.squared                 
+coef(finalchk_hrp)				 
+coef(modelchk.hrp)				 
+```
+##Model of acceleration for 300 records:
+```{r Model of acceleration}
+modelchk.acc = lm(mpg~acceleration, data=auto.three_hudrd)
+summary(modelchk.acc) 
+finalchk_acc = summary(modelchk.acc)
+finalchk_acc$r.squared 			
+finalchk_acc$adj.r.squared 		
+coef(finalchk_acc)				
+coef(modelchk.acc)				
+```
+##Model of weight for 300 records:
+```{r Model of weight}
+modelchk.wght = lm(mpg~weight, data=auto.three_hudrd)
+summary(modelchk.wght) 
+finalchk_wght = summary(modelchk.wght)
+finalchk_wght$r.squared			
+finalchk_wght$adj.r.squared 		
+coef(finalchk_wght)			
+coef(modelchk.wght)		
+```
+##Examining 300 records for multiple linear regression:
+```{r 300 records MLR}
+mlrmodelchk = lm(mpg ~ displacement + horsepower + weight + acceleration,data = atodf_main[1:300,])
+fnl_mlrchk = summary(mlrmodelchk)
+fnl_mlrchk$r.squared			
+fnl_mlrchk$adj.r.squared 		
+summary(mlrmodelchk)$coefficient		
+confint(mlrmodelchk)
+```
+##Model of displacement 300 records residual:
+```{r Model of displacement residual}
+mdlchk.dist = lm(mpg~displacement, data=auto.three_hudrd)
+disfnl_residual = mdlchk.dist$residuals
+plot(auto.three_hudrd$mpg~disfnl_residual ,lwd=3, col="green",main="Displacement residual",ylab = "mpg")
+```
+##Linear model of displacement 300 records residual:
+```{r Linear model of displacement}
+qqnorm(resid(modelchk.dis))
+qqline(resid(modelchk.dis))
+plot(density(resid(modelchk.dis)))
+```
+##Model of displacement for 300 records histogram:
+```{r Model of displacement histogram}
+hist(disfnl_residual ,prob=T,breaks=20,main="displacement histogram for 300 records",xlab="Residuals")
+lines(density(disfnl_residual ),col="blue",lwd=3)
+```
+##Model of displacement predictions for 98 records:
+```{r displacement prediction}
+fnlpdct_dis = modelchk.dis %>% predict(auto.nity_eight)  
+data.frame( Prediction_DISPLACEMENT_R2 = R2(fnlpdct_dis, auto.nity_eight$mpg),Prediction_DISPLACEMENT_RMSE = RMSE(fnlpdct_dis , auto.nity_eight$mpg),Prediction_DISPLACEMENT_MAE = MAE(fnlpdct_dis, auto.nity_eight$mpg))
+```
+##DISPLACEMENT MODEL PREDICTION REPORT: All estimated values in this output are statistically significant, with a p-value of 2.2e-16. It is shown that the plot of MPG vs. displacement is not linear and that there is some kind of relationship between the variable and the residual. There is no question that this model is insufficient. On the diagnostic plot, the following data points, which total 112,245,248 are outliers. According to the R square, only 38% of displacement may explain MPG.
+
+
+##Model of Horsepower 300 records Residual:
+```{r Model of Horsepower setup}
+hrpfnl_residual = modelchk.hrp$residuals
+plot(auto.three_hudrd$mpg~hrpfnl_residual ,lwd=3, col="green",main="Horsepower residual",ylab = "mpg")
+```
+## Linear Models of Horsepower for 300 records:
+```{r Linear Models of Horsepower}
+qqnorm(resid(modelchk.hrp))
+qqline(resid(modelchk.hrp))
+plot(density(resid(modelchk.hrp)))
+```
+##Histogram of Horsepower Model for 300 records:
+```{r Histogram of Horsepower Model }
+hist(hrpfnl_residual ,prob=T,breaks=20,main="Horsepower Model Histogram for 300 records",xlab="Residuals")
+lines(density(hrpfnl_residual ),col="blue",lwd=3)
+```
+##Horsepower Model predictions for 98 records:
+```{r Horsepower Model predictions}
+pdctfnl_hrp = modelchk.hrp %>% predict(auto.nity_eight)  
+data.frame( Prediction_HORSEPOWER_R2 = R2(pdctfnl_hrp, auto.nity_eight$mpg),Prediction_HORSEPOWER_RMSE = RMSE(pdctfnl_hrp, auto.nity_eight$mpg),Prediction_HORSEPOWER_MAE = MAE(pdctfnl_hrp, auto.nity_eight$mpg))
+```
+##REPORT ON PROJECTIONS FOR THE POWER MODEL: The R square corrected is 0.225. It is clear from this that the model is incorrect because just 22.5% of horsepower explains mpg. Nevertheless, we discovered that it was significant with a p-value of 2.2e-16. There is an unbalanced relationship between mpg and horsepower.
+
+
+##Model of Acceleration Residual for 300 records:
+```{r Model of Acceleration Residual}
+accfnl_residual = modelchk.acc$residuals
+plot(auto.three_hudrd$mpg~accfnl_residual ,lwd=3, col="green",main="Acceleration Residual",ylab = "mpg")
+```
+##Linear Model of Acceleration Residual for 300 records:
+```{r Acceleration Residual}
+qqnorm(resid(modelchk.acc))
+qqline(resid(modelchk.acc))
+plot(density(resid(modelchk.acc)))
+```
+##Model of Acceleration Histogram for 300 records:
+```{r Acceleration Histogram}
+hist(accfnl_residual ,prob=T,breaks=20,main="Acceleration Histogram for 300 records",xlab="Residuals")
+lines(density(accfnl_residual ),col="blue",lwd=3)
+```
+##Model of Acceleration predictions for 98 records:
+```{r Acceleration predictions}
+pdctfnl_acc = modelchk.acc %>% predict(auto.nity_eight)  
+data.frame( Prediction_ACCELERATION_R2 = R2(pdctfnl_acc, auto.nity_eight$mpg),Prediction_ACCELERATION_RMSE = RMSE(pdctfnl_acc, auto.nity_eight$mpg),Prediction_ACCELERATION_MAE = MAE(pdctfnl_acc, auto.nity_eight$mpg))
+```
+##ACCELERATION MODEL PREDICTION REPORT: All estimated values in this output are statistically significant, with a p-value of 2.2e-16. It has been established that there is no conclusive evidence linking these two variables. It looks like the residual vs. acceleration plot is in good shape. In the future, we'll comment on this genre of story.
+
+
+##Model of Weight Residual for 300 records:
+```{r Model of Weight Residual}
+wghtfnl_residual = modelchk.wght$residuals
+plot(auto.three_hudrd$mpg~wghtfnl_residual ,lwd=3, col="Green",main="Model of Weight Residual",ylab = "mpg")
+```
+##Linear Models of Weight for 300 records:
+```{r  Models of Weight}
+qqnorm(resid(modelchk.wght))
+qqline(resid(modelchk.wght))
+plot(density(resid(modelchk.wght)))
+```
+##Model Weight of Histogram for 300 records:
+```{r Weight of Histogram}
+hist(wghtfnl_residual ,prob=T,breaks=20,main="Model Weight of Histogram for 300 records",xlab="Residuals")
+lines(density(wghtfnl_residual ),col="blue",lwd=3)
+```
+##Model Weight predictions for 98 records:
+```{r Weight predictions}
+pdctfnl_wght = modelchk.wght %>% predict(auto.nity_eight)  
+data.frame( Prediction_WEIGHTMODEL_R2 = R2(pdctfnl_wght, auto.nity_eight$mpg),Prediction_WEIGHTMODEL_RMSE = RMSE(pdctfnl_wght, auto.nity_eight$mpg),Prediction_WEIGHTMODEL_MAE = MAE(pdctfnl_wght, auto.nity_eight$mpg))
+```
+##REPORT ON PROJECTION FOR THE WEIGHT MODEL: The results of the regression show unequivocally that our model is reliable. A 2.2e-16 5% P-value is used. The coefficient of the model is statistically significant in explaining the mpg as a result. This model is the best option since it has the greatest R squared (0.7733) among the alternatives. Weight accounts for 77.33% of the mpg, per this Rsquared. In order to choose the best regression, we compared the R squared adjusted (0.7733>0.7129>0.2127) at this stage and selected the model with the greatest R squared adjusted.

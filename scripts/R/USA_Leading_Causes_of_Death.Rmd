@@ -1,0 +1,158 @@
+---
+title: "USA Leading Causes of Death"
+author: "Uday"
+date: "2023-03-11"
+output:
+  pdf_document: default
+  'html_document:code_folding : hide': default
+  html_document:
+    code_folding: hide
+---
+
+
+```{r echo=FALSE, out.width = "30%", fig.align = "center"}
+knitr::include_graphics("C:/Users/Public/USA_Leading_Causes_of_Death.jpg")
+```
+
+## Description Of Project:
+
+The leading sources of death in the USA by racial and gender since 2007. The cause of death is established using the USA death certificate, which is produced for each death that occurs in USA.
+
+The most recent instance was on 9/24/2019. The Bureau of Vital Statistics and the USA Department of Health and Mental Hygiene have repressed rates based on tiny numbers (RSE > 30) and aggregate counts under 5.
+
+## Data Source Link 
+
+<https://catalog.data.gov/dataset/new-york-city-leading-causes-of-death/resource/845a3736-6ce4-46da-a82d-8a5f9add81f1>
+
+## Project Purpose
+
+By examining the aforementioned information to determine the trend of Race, Ethnicity, Death Rate, and Gender of each year, we will be able to extract the useful information from the dataset.
+
+## Project Results
+
+1) To calculate the input statistics.
+2) Determination of linear regression for Year, Race, Nationality, Death Rate, and Gender.
+3) The development of linear regression for Year, Race, Ethnicity, Mortality, and Gender.
+4) Making a data visualization for the variables Year, Race, Ethnicity, Death Rate, and Gender.
+5) Examining the year, race, ethnicity, death rate, and gender data groups.
+
+## Packages And Libraries
+
+```{r installing packages and using libraries,results='hide',message=FALSE,warning=FALSE}
+install.packages("tidyr", repos = "http://cran.us.r-project.org")
+install.packages("factoextra", repos="http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+install.packages("knitr", repos = "http://cran.us.r-project.org")
+install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+library(factoextra)
+library(tidyr)
+library(dplyr)
+library(magrittr)
+library(lubridate)
+library(stringr) 
+library(knitr)
+library(ggplot2)
+```
+
+
+## Code for USA Leading Causes of Death
+
+```{r Code for USA Leading Causes of Death}
+
+# Reading the data 
+main_df =  read.csv("C:/Users/Public/USA_Leading_Causes_of_Death.csv")
+
+# Making all headings lowercase and Renaming the columns spaces with "_".
+
+main_df = main_df %>%select_all(~gsub("\\s+|\\.", "_", .)) %>% select_all(tolower)
+
+# Structure before transformation
+str(main_df)
+
+# Transforming the column values
+
+main_df$sex[main_df$sex == "M"] = "Male"
+main_df$sex[main_df$sex == "F"] = "Female"
+
+# Data Casting the values with numeric data type
+main_df$deaths = as.numeric(main_df$deaths)
+main_df$death_rate = as.numeric(main_df$death_rate)
+main_df$age_adjusted_death_rate = as.numeric(main_df$age_adjusted_death_rate)
+
+# Structure after transformation
+str(main_df)
+
+# Removing the invalid records from the data frame
+main_df_na = na.omit(main_df)
+
+# Statistics of the core data frame
+kable(summary(select(main_df_na,year,deaths,death_rate,age_adjusted_death_rate)),row.names = FALSE,caption = "USA Cases of Death Statistics")
+
+# Grouping the required columns 
+df_grpby = group_by(main_df_na,leading_cause, year, sex)
+
+det_tot = main_df_na %>% group_by(year) %>% 
+  summarise(Totadeaths=sum(deaths),.groups = 'drop') %>% as.data.frame()
+
+# Linear regression of deaths VS years
+summary(lm(deaths~year, data = main_df_na))
+
+# Polynomial regression of deaths VS years
+summary(lm(deaths ~ poly(year, 2, raw = TRUE),data = main_df_na))
+
+# Plotting the graph for deaths VS years
+ggplot(det_tot,aes(x=year,y=Totadeaths)) +geom_line(size=1.5) +
+    labs(x = "year", y = "deaths",caption="USA Death Cases From 2007 until 2019") +
+    ggtitle(paste0("USA Total Deaths"))+
+    theme_minimal()+
+    theme(legend.position = "right", 
+          plot.caption = element_text(hjust = 0.5),
+          plot.title = element_text(hjust = 0.5,size=16),
+          text = element_text(size=14))+
+    scale_fill_brewer(palette="Set3") 
+
+# Clustering for deaths VS years
+df_USAdet = select(main_df_na,year,deaths)
+USAdetcls = kmeans(df_USAdet, centers = 1)
+fviz_cluster(USAdetcls, data = df_USAdet)
+
+# Linear regression of death rate VS years
+summary(lm(death_rate~year, data = main_df_na))
+
+# Polynomial regression of death rate VS years
+summary(lm(death_rate ~ poly(year, 2, raw = TRUE),data = main_df_na))
+
+# Plotting the graph for death rate VS years
+ggplot(main_df_na,aes(x=year, y=death_rate, color = sex)) +
+  ggtitle("USA Death Rate Of Each Gender From 2007 Until 2019") +
+  xlab("Year") +
+  ylab("Death Rate") +
+  theme_minimal(base_size = 12) + 
+  geom_point() +
+  scale_color_discrete(name = "Gender")
+
+# Clustering for death rate VS years
+df_USAdetrate = select(main_df_na,year,death_rate)
+USAdetratecls = kmeans(df_USAdetrate, centers = 2)
+fviz_cluster(USAdetratecls, data = df_USAdetrate)
+
+# Linear regression of age adjusted death rate VS years
+summary(lm(age_adjusted_death_rate~year, data = main_df_na))
+
+# Polynomial regression of age adjusted death rate VS years
+summary(lm(age_adjusted_death_rate ~ poly(year, 2, raw = TRUE),data = main_df_na))
+
+# Plotting the graph for age adjusted death rate VS years
+ggplot(df_grpby,aes(x=year, y=age_adjusted_death_rate,fill=race_ethnicity)) +
+  ggtitle("USA Average Age Death Rate Of Each Race Ethnicity") +
+  xlab("Year") +
+  ylab("Average Age Death Rate") +
+  theme_minimal(base_size = 12) + 
+  geom_bar(stat="identity") +
+  scale_color_discrete(name = "Race Ethnicity")
+
+# clustering for age adjusted death rate VS years 
+df_USAraceeth = select(main_df_na,year,age_adjusted_death_rate)
+USAraceeth = kmeans(df_USAraceeth, centers = 4)
+fviz_cluster(USAraceeth, data = df_USAraceeth)
+```

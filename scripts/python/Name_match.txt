@@ -1,0 +1,11 @@
+def get_windows(seq_str, win_size, stp_size):
+  chk_list = []
+  for i in range(0, len(seq_str) - win_size + 1, stp_size):
+    chk_list += [seq_str[i:i+win_size]]
+  return chk_list
+
+assert get_windows("ACGGTAGACCT",3,1)==['ACG','CGG','GGT','GTA','TAG','AGA','GAC','ACC','CCT']
+assert get_windows("ACGGTAGACCT",3,3)==['ACG','GTA','GAC']
+assert get_windows("ACGGTAGACCT",3,5)==['ACG','AGA']
+assert get_windows("ACGGTAGACCT",5,2)==["ACGGT",'GGTAG','TAGAC','GACCT']
+assert get_windows("ACGGTAGACCT",5,7)==["ACGGT"]

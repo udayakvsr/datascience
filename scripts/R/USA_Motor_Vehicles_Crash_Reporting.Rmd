@@ -1,0 +1,248 @@
+---
+title: "USA Motor Vehicles Crash Reporting"
+author: "Uday"
+date: "2023-03-11"
+output:
+  pdf_document: default
+  'html_document:code_folding : hide': default
+  html_document:
+    code_folding: hide
+---
+
+```{r echo=FALSE, out.width = "50%", fig.align = "center"}
+knitr::include_graphics("C:/Users/Public/USA_Motor_Vehicles_Crash_Reporting.jpg")
+```
+
+## Data Description:
+
+This dataset profiles the drivers of motor vehicles who were involved in collisions on municipal and state roads in the USA. The dataset contains details on every traffic accident that was reported by the Automated Crash Reporting System on county and local roads in the United States (ACRS). This dataset displays the drivers engaged in each collision along with its statistics.
+
+## Link to Dataset:
+
+<https://catalog.data.gov/dataset/crash-reporting-drivers-data/resource/9851a37f-4f32-464e-8ba6-c23023653a7f>
+
+## Project Statement:
+
+We will be able to learn useful information by utilizing the provided dataset, such as which year saw the greatest number of reported cases, what weather conditions result in the majority of accidents, what severity level was present at the time of the accident, and what types of crashes are most frequently reported. Consequently, carrying out some studies and figuring out the outcome.
+
+## Research Results:
+
+To analyze the data for the following situations and determine statistics, linear regression, polynomial regression, and clustering.
+
+The following scenarios are presented for each year:
+
+Scenario 1: Types of Accidents reported.
+Scenario 2: Total Cases reported.
+Scenario 3: Total Cases Injury Severity.
+Scenario 4: Weather At The Time Of An Incidents For Each Year.
+
+## Installing Packages And Libraries:
+
+```{r installing below packages ,results='hide',message=FALSE,warning=FALSE}
+install.packages("tidyr", repos = "http://cran.us.r-project.org")
+install.packages("factoextra", repos="http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+install.packages("knitr", repos = "http://cran.us.r-project.org")
+install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+library(factoextra)
+library(tidyr)
+library(dplyr)
+library(lubridate)
+library(stringr) 
+library(knitr)
+library(ggplot2)
+```
+
+## Main Source Code Logic Begin Here :
+
+```{r Main Source Code Started,warning=FALSE}
+
+#Read into a data frame:
+
+usa_crashdf =  read.csv("C:/Users/Public/USA_Motor_Vehicles_Crash_Reporting.csv")
+
+#Changing the column's names to more appropriate ones:
+
+usa_crashmdf =  select_all(usa_crashdf,(~gsub("\\s+|\\.", "_", .)))
+colnames(usa_crashmdf) 
+
+#Replacing all spaces with NAs:
+
+usa_crashmdf[usa_crashmdf == ""] = NA  
+
+#Removing the duplicates in the data frame:
+
+usa_crashmdf = unique(usa_crashmdf)
+
+#Selecting required columns:
+
+usa_crashmdf1 = select(usa_crashmdf,Local_Case_Number,Agency_Name,ACRS_Report_Type,Crash_Date_Time,Route_Type,Cross_Street_Type,Weather,Surface_Condition,Light,Driver_Substance_Abuse,Injury_Severity,Circumstance,Driver_Distracted_By,Vehicle_Damage_Extent,Vehicle_Body_Type,Vehicle_Continuing_Dir,Vehicle_Going_Dir,Speed_Limit,Driverless_Vehicle,Vehicle_Year,Vehicle_Make)
+
+#Removal of the NA values from the data frame:
+
+usa_crashmdf2 = na.omit(usa_crashmdf1)
+
+#Creating a Year column from Crash Date/Time:
+
+usa_crashmdf2$Year = as.POSIXct(usa_crashmdf2$Crash_Date_Time, format = "%m/%d/%Y %H:%M:%S")
+
+usa_crashmdf2$Year = format(usa_crashmdf2$Year , format="%Y")
+
+usa_crashmdf2$Year = as.numeric(usa_crashmdf2$Year)
+
+#Dataframe structure :
+
+str(usa_crashmdf2)
+
+#Selecting columns for applying rules:
+
+usa_crash_col = select(usa_crashmdf2,Local_Case_Number,Agency_Name,Route_Type,Weather,ACRS_Report_Type,Driver_Substance_Abuse,Surface_Condition,Light,Vehicle_Year,Vehicle_Make,Year,Vehicle_Damage_Extent,Vehicle_Body_Type,Injury_Severity)
+
+#Scenario-1 :Types of Crashes reported for each year:
+
+usa_rule1 = select(usa_crash_col,ACRS_Report_Type,Year)
+
+#Scenario-1 :Groupby count of required column:
+
+usa_crash_rule1 = aggregate(usa_rule1$ACRS_Report_Type, by=list(usa_rule1$ACRS_Report_Type,usa_rule1$Year), FUN=length)
+
+usa_crashgrp = rename(usa_crash_rule1,"Total_Report_Type" = "x", "ACRS_Report_Type" = "Group.1","Year" = "Group.2")
+
+#Scenario-1 :Types Of Crashes Reported For Each Year Statistics:
+
+kable(summary(select(usa_crashgrp,Total_Report_Type,Year)),row.names = FALSE,caption = "Types Of Crashes Reported For Each Year Statistics")
+
+#Scenario-1 :Linear regression of Types Of Crashes Reported For Each Year In USA:
+
+summary(lm(Total_Report_Type~Year, data = usa_crashgrp))
+
+#Scenario-1 :Polynomial regression of Types Of Crashes Reported For Each Year In USA:
+
+summary(lm(Total_Report_Type ~ poly(Year, 2, raw = TRUE),data = usa_crashgrp))
+
+#Scenario-1 :Plotting Types Of Crashes Reported For Each Year:
+
+ggplot(usa_crashgrp,aes(x=Year, y=Total_Report_Type,fill=ACRS_Report_Type)) +
+  ggtitle("Types Of Crashes Reported For Each Year In USA") +
+  xlab("Year") +
+  ylab("Total Crashes Reported ") +
+  theme_minimal(base_size = 12) + 
+  geom_bar(stat="identity") +
+  coord_flip() +
+  scale_color_discrete(name = "Different Types Of Crashes")
+
+#Scenario-1 :Clustering for Types Of Crashes Reported For Each Year In USA:
+
+fviz_cluster((kmeans((select(usa_crashgrp,Year,Total_Report_Type)), centers =2)), data = (select(usa_crashgrp,Year,Total_Report_Type)),title="Clustering Different Types Of Crashes For Each Year In USA")
+
+
+#Scenario-2 :Total Cases Reported For Each Year In USA:
+
+usa_crash_rule2 = select(usa_crash_col,Year)
+
+#Scenario-2 : Groupby count of required column:
+
+usa_crashgrp_rule2 = aggregate(usa_crash_rule2$Year, by=list(usa_crash_rule2$Year), FUN=length)
+
+usa_crashgrp_rule2 = rename(usa_crashgrp_rule2,"Total_Cases" = "x","Year" = "Group.1")
+
+#Scenario-2 :Total Cases Reported For Each Year In USA Statistics:
+
+kable(summary(select(usa_crashgrp_rule2,Total_Cases,Year)),row.names = FALSE,caption = "Total Cases Reported For Each Year Statistics")
+
+#Scenario-2 :Linear regression of Total Cases Reported For Each Year In USA:
+
+summary(lm(Total_Cases~Year, data = usa_crashgrp_rule2))
+
+#Scenario-2 :Polynomial regression of Total Cases Reported For Each Year In USA:
+
+summary(lm(Total_Cases ~ poly(Year, 2, raw = TRUE),data = usa_crashgrp_rule2))
+
+#Scenario-2 :Plotting Total Cases Reported For Each Year In USA:
+
+ggplot(usa_crashgrp_rule2,aes(x=Year,y=Total_Cases)) +geom_line(size=1.5) +labs(x = "Year", y = "Total Cases") +
+    ggtitle(paste0("Total Cases Reported For Each Year"))+
+    theme_minimal()+
+    theme(legend.position = "right",
+          plot.title = element_text(hjust = 0.5,size=16),
+          text = element_text(size=14))+
+    scale_fill_brewer(palette="Set3") 
+
+#Scenario-2 :Clustering for Total Cases Reported For Each Year In USA:
+
+fviz_cluster((kmeans((select(usa_crashgrp_rule2,Year,Total_Cases)), centers =2)), data = (select(usa_crashgrp_rule2,Year,Total_Cases)),title="Clustering for Total Cases Reported For Each Year In USA")
+
+#Scenario-3 :Total Cases Injury Severity:
+
+USA_crash_rule3 = select(usa_crash_col,Injury_Severity,Year)
+
+#Scenario-3 : Groupby count of required column:
+
+usa_crashgrp_rule3 = aggregate(USA_crash_rule3$Injury_Severity, by=list(USA_crash_rule3$Injury_Severity,USA_crash_rule3$Year), FUN=length)
+
+usa_crashgrp_rule3 = rename(usa_crashgrp_rule3,"Total_Injury_Severity" = "x","Injury_Severity" = "Group.1","Year" = "Group.2")
+
+#Scenario-3 :Total Cases Injury Severity Statistics For Each Year In USA :
+
+kable(summary(select(usa_crashgrp_rule3,Total_Injury_Severity,Year)),row.names = FALSE,caption = "Total Cases Injury Severity Statistics")
+
+#Scenario-3 :Linear regression Of Total Cases Injury Severity For Each Year :
+
+summary(lm(Total_Injury_Severity~Year, data = usa_crashgrp_rule3))
+
+#Scenario-3 :Polynomial regression Of Total Cases Injury Severity For Each Year In USA:
+
+summary(lm(Total_Injury_Severity ~ poly(Year, 2, raw = TRUE),data = usa_crashgrp_rule3))
+
+#Scenario-3 :Plotting Total Cases Injury Severity For Each Year In USA:
+
+ggplot(usa_crashgrp_rule3,aes(x=Year,y=Total_Injury_Severity,col = Injury_Severity)) +geom_line(size=1.5) +labs(x = "Year", y = "Total_Injury_Severity") +
+    ggtitle(paste0("Total Cases Injury Severity For Each Year"))+
+    theme_minimal()+
+    theme(legend.position = "right",
+          plot.title = element_text(hjust = 0.5,size=16),
+          text = element_text(size=14))+
+    scale_fill_brewer(palette="Set3") 
+
+#Scenario-3 :Clustering for Total Cases Injury Severity For Each Year In USA:
+
+fviz_cluster((kmeans((select(usa_crashgrp_rule3,Year,Total_Injury_Severity)), centers =2)), data = (select(usa_crashgrp_rule3,Year,Total_Injury_Severity)),title="Clustering for Total Cases Injury Severity For Each Year")
+
+
+#Scenario-4 :Weather at the time of an each incident:
+
+usa_crash_rule4 = select(usa_crash_col,Weather,Year)
+usa_crash_rule4 = filter(usa_crash_rule4, Weather != "N/A")
+
+#Scenario-4 : Groupby count of required column:
+
+usa_crashgrp_rule4 = aggregate(usa_crash_rule4$Weather, by=list(usa_crash_rule4$Weather,usa_crash_rule4$Year), FUN=length)
+
+usa_crashgrp_rule4 = rename(usa_crashgrp_rule4,"Total_Incidents" = "x","Weather" = "Group.1","Year" = "Group.2")
+
+#Scenario-4 :Weather At The Time Of An Each Incident Statistics For Each Year :
+
+kable(summary(select(usa_crashgrp_rule4,Total_Incidents,Year)),row.names = FALSE,caption = "Weather At The Time Of An Each Incident Statistics")
+
+#Scenario-4 :Linear regression Of Weather At The Time Of An Each Incident For Each Year In USA :
+
+summary(lm(Total_Incidents~Year, data = usa_crashgrp_rule4))
+
+#Scenario-4 :Polynomial regression Of Weather At The Time Of An Each Incident For Each Year In USA :
+
+summary(lm(Total_Incidents ~ poly(Year, 2, raw = TRUE),data = usa_crashgrp_rule4))
+
+#Scenario-4 :Plotting Weather At The Time Of An Each Incident For Each Year :
+
+ggplot(usa_crashgrp_rule4,aes(x=Year, y=Total_Incidents,fill=Weather)) +
+  ggtitle("Weather At The Time Of An Each Incident For Each Year In USA") +
+  xlab("Year") +
+  ylab("Total Incidents") +
+  theme_minimal(base_size = 12) + 
+  geom_bar(stat="identity") +
+  scale_color_discrete(name = "Weather Type") 
+
+#Scenario-4 :Clustering for Weather At The Time Of An Each Incident For Each Year In USA:
+
+fviz_cluster((kmeans((select(usa_crashgrp_rule4,Year,Total_Incidents)), centers =4)), data = (select(usa_crashgrp_rule4,Year,Total_Incidents)),title="Clustering for Weather At The Time Of An Each Incident For Each Year In USA")
+```

@@ -1,0 +1,245 @@
+---
+title: "USA Greenhouse Gas Emissions"
+author: 'Uday'
+date: "2023-03-11"
+output:
+  pdf_document: default
+  html_document:
+    code_folding: hide
+  'html_document:code_folding : hide': default
+---
+```{r echo=FALSE, out.width = "50%", fig.align = "center"}
+knitr::include_graphics("C:/Users/Public/USA_Greenhouse_Gas_Emissions.jpg")
+```
+
+## Introduction
+
+The complete, precise emission totals in this dataset will serve as the basis for the 2021 USA Statewide Greenhouse Gas Emissions Report, a crucial component of the State's climate change policy. This emission inventory's objectives are to satisfy the requirements of the Climate Leadership and Community Protection Act (CLCPA), monitor the development of the effort to reduce greenhouse gas emissions, and broaden public access to information about greenhouse gases. This dataset contains the most current estimate of annual emissions from 1990 to the most recent year for which data are accessible.
+
+## Data Source Link
+
+<https://data.ny.gov/api/views/5i6e-asw6/rows.csv?accessType=DOWNLOAD>
+
+## Mission Goals:
+To ascertain the total quantity of gases released into the atmosphere, the polluting industry, and the yearly tendency. We will therefore extract this information from the aforementioned data collection.
+
+## The Findings From This Study Are:
+
+Statistics, linear regression, polynomial regression, and data plotting details were collected for each rule.
+
+1) Total Gas Emissions Yearly.
+2) Gases Releases From Various Sectors.
+3) Various Gases Are Emitted Each Year.
+
+## Main Packages And Libraries:
+
+```{r Packages and libraries ,results='hide',message=FALSE,warning=FALSE}
+install.packages("tidyr", repos = "http://cran.us.r-project.org")
+install.packages("factoextra", repos="http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+install.packages("knitr", repos = "http://cran.us.r-project.org")
+install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+
+library(factoextra)
+library(tidyr)
+library(dplyr)
+library(lubridate)
+library(stringr) 
+library(magrittr)
+library(knitr)
+library(ggplot2)
+```
+
+## Reading The Dataset:
+
+```{r Reading the csv}
+core_df =  read.csv("C:/Users/Public/USA_Greenhouse_Gas_Emissions.csv")
+head(core_df)
+str(core_df)
+```
+
+## Replacing Spaces With NAs:
+
+```{r Replacing Spaces with NAs}
+core_df[core_df==''] = NA
+```
+
+## Renaming The Columns:
+
+```{r Renaming the columns}
+core_df = core_df %>%select_all(~gsub("\\s+|\\.", "_", .))
+str(core_df)
+
+```
+## Transforming The Data:
+
+```{r Transforming the data}
+
+#Removing the NA from the data frame.
+core_dft1 = na.omit(core_df)
+
+#Selecting required columns 
+  
+core_dft2 = select(core_dft1,Gross,MT_CO2e_AR5_20_yr,Economic_Sector,MT_CO2e_AR4_100_yr,Year,Category,Net,Gas)
+
+head(core_dft2)
+
+```
+
+## Total Gas Emissions Yearly:
+
+```{r Total Gas Emissions Yearly }
+core_dft3 = filter(core_dft2, Gross== "Yes")
+
+core_dft4 = aggregate(core_dft3$MT_CO2e_AR5_20_yr, list(core_dft3$Year), FUN=sum)
+
+core_dft4 = rename(core_dft4,"MT_CO2e_AR5_20_yr" = "x", "Year" = "Group.1")
+
+kable(summary(select(core_dft4,MT_CO2e_AR5_20_yr,Year)),row.names = FALSE,caption = "Total Gases Emission Statistics")
+
+```
+
+## Total Gases Emission Linear Regression For Each Year:
+
+```{r Total Gases emission linear regression for each year }
+
+corelm1_dft = lm(MT_CO2e_AR5_20_yr~Year, data = core_dft4)
+summary(corelm1_dft)
+```
+
+## Total Gases Emission Polynomial Regression For Each Year:
+
+```{r Total Gases emission polynomial regression for each year }
+
+corelm1_dft = lm(MT_CO2e_AR5_20_yr ~ poly(Year, 2, raw = TRUE),data = core_dft4) 
+summary(corelm1_dft)
+```
+
+## Total Gases Emission Plotting:
+
+```{r Total Gases emission plotting,warning=FALSE }
+ggplot(core_dft4,aes(x=Year,y=MT_CO2e_AR5_20_yr)) +geom_line(size=1.5) +
+    labs(x = "Year", y = "Total Gases Emission",caption="Gases emission") +
+    ggtitle(paste0("Total Gases emission for each year"))+
+    theme_minimal()+
+    theme(legend.position = "right", 
+          plot.caption = element_text(hjust = 0.5),
+          plot.title = element_text(hjust = 0.5,size=16),
+          text = element_text(size=14))+
+    scale_fill_brewer(palette="Set3") 
+
+```
+
+## Total Gases Emission Clustering:
+
+```{r Gross Gases emission clustering,warning=FALSE}
+coreclst1_dft = select(core_dft4,Year,MT_CO2e_AR5_20_yr)
+coreclst1_dft1 = kmeans(coreclst1_dft, centers = 3)
+fviz_cluster(coreclst1_dft1, data = coreclst1_dft,title="Gases Emission clustering")
+```
+
+## Gases Releases From Various Sectors:
+
+```{r Gases Releases From Various Sectors }
+core_dft5 = filter(core_dft2, Gross== "Yes")
+
+core_dft6 = aggregate(core_dft5$MT_CO2e_AR5_20_yr, list(core_dft5$Year,core_dft5$Economic_Sector), FUN=sum)
+
+core_dft6 = rename(core_dft6,"Gas_Emissions" = "x", "Year" = "Group.1","Economic_Sector" = "Group.2")
+
+kable(summary(select(core_dft6,Gas_Emissions,Year)),row.names = FALSE,caption = "Gases Releases From Various Sectors Statistics")
+
+```
+
+## Checking The Linear Regression  For Gases Releases From Various Sectors:
+
+```{r Checking the linear regression  for Gases Releases From Various Sectors }
+
+corelm2_dft = lm(Gas_Emissions~Year, data = core_dft6)
+summary(corelm2_dft)
+```
+
+
+## Checking the polynomial regression  for Gases Releases From Various Sectors:
+
+```{r Checking the polynomial regression  for Gases Releases From Various Sectors }
+
+coreplm2_dft = lm(Gas_Emissions ~ poly(Year, 2, raw = TRUE),data = core_dft6) 
+summary(coreplm2_dft)
+```
+
+## Plotting for Gases Releases From Various Sectors:
+
+```{r Plotting for Gases Releases From Various Sectors ,warning=FALSE}
+
+ggplot(core_dft6,aes(x=Year, y=Gas_Emissions,fill=Economic_Sector)) +
+  ggtitle("Gases Releases From Various Sectors") +
+  xlab("Year") +
+  ylab("Total Gases Emission Released") +
+  theme_minimal(base_size = 12) + 
+  geom_bar(stat="identity") +
+  scale_color_discrete(name = "Economic SectorS")
+
+```
+
+## Clustering for Gases Releases From Various Sectors:
+
+```{r Clustering for Gases Emissions Released By Different Sectors,warning=FALSE}
+coreclst2_dft = select(core_dft6,Year,Gas_Emissions)
+coreclst2_dft1 = kmeans(coreclst2_dft, centers = 4)
+fviz_cluster(coreclst2_dft1, data = coreclst2_dft,title="Clustering Gases Releases From Various Sectors")
+```
+
+## Checking The Various Gases Are Emitted Each Year:
+
+```{r Checking The Various Gases Are Emitted Each Year }
+core_dft7 = filter(core_dft2, Gross== "Yes")
+
+core_dft8 = aggregate(core_dft7$MT_CO2e_AR5_20_yr, list(core_dft7$Year,core_dft7$Gas), FUN=sum)
+
+core_dft8 = rename(core_dft8,"Gas_Emissions" = "x", "Year" = "Group.1","Gas" = "Group.2")
+
+kable(summary(select(core_dft8,Gas_Emissions,Year)),row.names = FALSE,caption = "Statistics Of Various Gases Are Emitted Each Year")
+
+```
+
+## Checking The Linear Regression For Various Gases Are Emitted Each Year:
+
+```{r Checking The Linear Regression For Various Gases Are Emitted Each Year }
+
+corelm3_dft = lm(Gas_Emissions~Year, data = core_dft8)
+summary(corelm3_dft)
+```
+
+
+## Checking The Polynomial Regression For Various Gases Are Emitted Each Year:
+
+```{r Checking The Polynomial Regression For Various Gases Are Emitted Each Year  }
+
+coreplm3_dft = lm(Gas_Emissions ~ poly(Year, 2, raw = TRUE),data = core_dft8) 
+summary(coreplm3_dft)
+```
+
+## Plotting Various Gases Are Emitted Each Year:
+
+```{r Plotting For Various Gases Are Emitted Each Year,warning=FALSE  }
+
+ggplot(core_dft8,aes(x=Year, y=Gas_Emissions,fill=Gas)) +
+  ggtitle("Various Gases Are Emitted Each Year") +
+  xlab("Year") +
+  ylab("Total Metric Tons Released") +
+  theme_minimal(base_size = 12) + 
+  geom_bar(stat="identity") +
+  coord_flip() +
+  scale_color_discrete(name = "Different Gases")
+
+
+```
+
+## Clustering Various Gases Are Emitted Each Year:
+
+```{r Clustering Various Gases Are Emitted Each Year,warning=FALSE }
+coreclst3_dft = select(core_dft8,Year,Gas_Emissions)
+coreclst3_dft1 = kmeans(coreclst3_dft, centers =3)
+fviz_cluster(coreclst3_dft1, data = coreclst3_dft,title="Clustering Various Gases Are Emitted Each Year")
+```

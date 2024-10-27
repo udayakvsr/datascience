@@ -1,0 +1,171 @@
+#Installing the necessary package and using them in the code:
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("magrittr")
+install.packages("knitr")
+install.packages("glmnet")
+install.packages("leaps")
+install.packages("gvlma")
+install.packages("psych")
+install.packages("latticeExtra")
+install.packages("caret")
+library(knitr)
+library(magrittr)
+library(leaps)
+library(gvlma)
+library(glmnet)
+library(psych)
+library(caret)
+library(latticeExtra)
+library(dplyr)
+library(tidyr)
+
+##Reading the auto-mpg.csv file:
+auto_df =  read.csv("C:/Users/vkoyya/Downloads/auto-mpg.csv")
+auto_df 
+str(auto_df)
+
+##Retransforming the data:
+names(auto_df) = c("mpg","cylinder","displacement","horsepower","weight","acceleration","model_year","origin","car_name")
+head(auto_df)  #first 6 records
+auto_df$horsepower[auto_df$horsepower=="?"] = NA
+auto_df$horsepower = as.numeric(auto_df$horsepower)
+auto_df$cylinder = as.numeric(auto_df$cylinder)
+str(auto_df)
+
+##Selecting the required data:
+auto_val = select(auto_df,mpg,displacement,horsepower,weight,acceleration)
+auto_val = na.omit(auto_val)
+kable(summary(auto_val),row.names = FALSE)
+#VISUAL PLOTS AND CHARTS: 
+pairs.panels(auto_val,method = "pearson",hist.col ="#00AFBB" ,density = TRUE,ellipses = TRUE)
+
+par(mfrow=c(2,2))
+for (i in names(auto_val)) {
+   boxplot(auto_val[,i], names = "names(auto_val[,i])")
+}
+
+#Dividing the data samples: 
+auto.chk = auto_val[1:300,]
+auto.tst = na.omit(auto_val[301:398,])
+
+#Below is the required logic for the first 300 samples:
+
+#DISPLACEMENT MODEL:
+model.dis <- lm(mpg~displacement, data=auto.chk)
+summary(model.dis)
+final_dis = summary(model.dis)
+final_dis$r.squared                      # Returning Multiple R-squared
+final_dis$adj.r.squared                  # Returning Adjusted R-squared
+coef(final_dis)                          # Simple Linear Regression
+coef(model.dis)                          # Simple Linear Regression
+
+#HORSEPOWER MODEL
+model.hrp = lm(mpg~horsepower, data=auto.chk)
+summary(model.hrp)
+final_hrp = summary(model.hrp)   
+final_hrp$r.squared                      # Returning Multiple R-squared
+final_hrp$adj.r.squared                  # Returning Adjusted R-squared
+coef(final_hrp)				 # Simple Linear Regression
+coef(model.hrp)				 # Simple Linear Regression
+
+#ACCELERATION MODEL
+model.acc = lm(mpg~acceleration, data=auto.chk)
+summary(model.acc) 
+final_acc = summary(model.acc)
+final_acc$r.squared 			# Returning Multiple R-squared
+final_acc$adj.r.squared 		# Returning Adjusted R-squared
+coef(final_acc)				# Simple Linear Regression
+coef(model.acc)				# Simple Linear Regression
+
+#WEIGHT MODEL
+model.wght = lm(mpg~weight, data=auto.chk)
+summary(model.wght) 
+final_wght = summary(model.wght)
+final_wght$r.squared			# Returning Multiple R-squared 
+final_wght$adj.r.squared 		# Returning Adjusted R-squared
+coef(final_wght)			# Simple Linear Regression
+coef(model.wght)			# Simple Linear Regression
+
+#Multiple Linear Regression
+mrmodel = lm(mpg ~ displacement + horsepower + weight + acceleration,data = auto.chk)
+final_mlr = summary(mrmodel)
+final_mlr$r.squared			# Returning Multiple R-squared 
+final_mlr$adj.r.squared 		# Returning Adjusted R-squared
+summary(mrmodel)$coefficient		# Simple Linear Regression
+confint(mrmodel)
+
+#Below is the logic for the 98 samples:
+
+#DISPLACEMENT MODEL Residual
+model.dist = lm(mpg~displacement, data=auto.chk)
+dis_residual = model.dist$residuals
+plot(auto.chk$mpg~dis_residual ,lwd=3, col="blue",main="residual",ylab = "mpg")
+
+#DISPLACEMENT Linear Models
+qqnorm(resid(model.dis))
+qqline(resid(model.dis))
+plot(density(resid(model.dis)))
+
+#DISPLACEMENT MODEL Histogram
+hist(dis_residual ,prob=T,breaks=20,main="HISTOGRAM",xlab="Residuals")
+lines(density(dis_residual ),col="red",lwd=3)
+
+#DISPLACEMENT MODEL predictions 
+pdct_dis = model.dis %>% predict(auto.tst)  
+data.frame( Prediction_DISPLACEMENT_R2 = R2(pdct_dis, auto.tst$mpg),Prediction_DISPLACEMENT_RMSE = RMSE(pdct_dis , auto.tst$mpg),Prediction_DISPLACEMENT_MAE = MAE(pdct_dis, auto.tst$mpg))
+#PREDICTION REPORT FOR  DISPLACEMENT MODEL:With a p-value of 2.2e-16, all estimated values in this output are statistically significant. It is demonstrated that there is some form of link between the variable and the residual and that the plot of MPG vs. displacement is not linear. There is little doubt that this model is inadequate. These subsequent data points, 112,245,248 on the diagnostic plot, are outliers. Only 38% of displacement, according to the R square, explains MPG.
+
+#HORSEPOWER MODEL Residual
+hrp_residual = model.hrp$residuals
+plot(auto.chk$mpg~hrp_residual ,lwd=3, col="blue",main="residual",ylab = "mpg")
+
+#HORSEPOWER Linear Models
+qqnorm(resid(model.hrp))
+qqline(resid(model.hrp))
+plot(density(resid(model.hrp)))
+
+#HORSEPOWER MODEL Histogram
+hist(hrp_residual ,prob=T,breaks=20,main="HISTOGRAM",xlab="Residuals")
+lines(density(hrp_residual ),col="red",lwd=3)
+#HORSEPOWER MODEL predictions 
+pdct_hrp = model.hrp %>% predict(auto.tst)  
+data.frame( Prediction_HORSEPOWER_R2 = R2(pdct_hrp, auto.tst$mpg),Prediction_HORSEPOWER_RMSE = RMSE(pdct_hrp, auto.tst$mpg),Prediction_HORSEPOWER_MAE = MAE(pdct_hrp, auto.tst$mpg))
+#PREDICTION REPORT FOR HORSEPOWER MODEL: 0.225 is the R square corrected. Because just 22.5% of horsepower explains mpg, it is obvious from this that the model is flawed. Nevertheless, with a p-value of 2.2e-16, we found that it was significant. The mpg and horsepower have an asymmetrical connection.
+
+#ACCELERATION MODEL Residual
+acc_residual = model.acc$residuals
+plot(auto.chk$mpg~acc_residual ,lwd=3, col="blue",main="ACCELERATION residual",ylab = "mpg")
+
+#ACCELERATION Linear Models
+qqnorm(resid(model.acc))
+qqline(resid(model.acc))
+plot(density(resid(model.acc)))
+
+#ACCELERATION MODEL Histogram
+hist(acc_residual ,prob=T,breaks=20,main="ACCELERATION HISTOGRAM",xlab="Residuals")
+lines(density(acc_residual ),col="red",lwd=3)
+
+#ACCELERATION MODEL predictions 
+pdct_acc = model.acc %>% predict(auto.tst)  
+data.frame( Prediction_ACCELERATION_R2 = R2(pdct_acc, auto.tst$mpg),Prediction_ACCELERATION_RMSE = RMSE(pdct_acc, auto.tst$mpg),Prediction_ACCELERATION_MAE = MAE(pdct_acc, auto.tst$mpg))
+#PREDICTION REPORT FOR ACCELERATION MODEL:With a p-value of 2.2e-16, all estimated values in this output are statistically significant. It is demonstrated that these two factors do not have a strong, significant relationship. The residual vs. acceleration plot appears to be in fine shape. We shall comment on this type of narrative in the future.
+
+#WEIGHT MODEL Residual
+wght_residual = model.wght$residuals
+plot(auto.chk$mpg~wght_residual ,lwd=3, col="blue",main="WEIGHT MODEL residual",ylab = "mpg")
+
+#WEIGHT Linear Models
+qqnorm(resid(model.wght))
+qqline(resid(model.wght))
+plot(density(resid(model.wght)))
+
+#WEIGHT MODEL Histogram
+hist(wght_residual ,prob=T,breaks=20,main="WEIGHT MODEL HISTOGRAM",xlab="Residuals")
+lines(density(wght_residual ),col="red",lwd=3)
+
+#WEIGHT MODEL predictions 
+pdct_wght = model.wght %>% predict(auto.tst)  
+data.frame( Prediction_WEIGHTMODEL_R2 = R2(pdct_wght, auto.tst$mpg),Prediction_WEIGHTMODEL_RMSE = RMSE(pdct_wght, auto.tst$mpg),Prediction_WEIGHTMODEL_MAE = MAE(pdct_wght, auto.tst$mpg))
+#PREDICTION REPORT FOR WEIGHT MODEL:The output of the regression clearly demonstrates that we have a sound model. P-value is 2.2e-16 5%. As a result, the model's coefficient is statistically significant in explaining the mpg. The best model to choose is this one since it has the highest R squared (0.7733) in comparison to the other models. According to this Rsquared, weight accounts for 77.33% of the mpg. We compared the R squared adjusted (0.7733>0.7129>0.2127) at this stage to determine the optimal regression, and we chose the model with the highest R squared adjusted.
+

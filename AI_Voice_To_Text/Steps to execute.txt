@@ -1,0 +1,43 @@
+--> Steps to execute code
+1)Open the Ipynb file in Jupyter Notebook
+2)execute the 2,3,4 cell and after complition of execution restart the notebook
+
+(Text to speech) logic
+3)Run the 5th cell you need to give a valid input 
+    (*)Please Enter the gender voice (0 is male and 1 is female)
+    (*)Please Enter the Rate of speech better give 100 or 150 if you give below 100 it will read slowly
+    (*)Please Enter the volume level between 0 & 1 if you give 0 it means 0 volume try to give 1 so it means full volume.
+    (*)Please give the word what ever you what to convert to speech.
+    (*)Given word will save in this location (C:\Users\{yourpcname}) with the given name in mp3 format. 
+
+(Speech to text) logic
+4)Run the 7th cell and start speaking after this line "Please start speaking" and after speaking if you give 15 secs of gap it will just print the output what you have speaked.
+5)Run the 8th cell it is just a function 
+6)Run the 9th cell it will use the function and convert the audio file which is located in this path (C:\Users\{yourpcname}) to text. 
+
+
+-->TTS ARCH:
+First we will be passing the input as text and as we are using the pyttsx3, libraries which in this we have a inbuilt functions to initiate the instance.in that instance we will be
+preprocing the data by check whether the input is a valid text and then in this inistance we will be setting up the volume ,rate of speech and type of voice this kind of functions
+we have achived by using setProperty functions which this can acommudate the all features once above trasformation is completed we have used the say function which will generates
+the speech.This all will hapeens in one instance only and also we save_to_file this function will save the output in audio formate then after we need to stop the instance.
+
+-->TTS Model
+A Text To Speech method that addresses the issues with standard concatenative TTS. 
+This technique generates the necessary frequency range for speech, then uses algorithms to recover speech from the generated sound source.
+
+On demand, the user will be asked to enter information into the code, such as the voice type and volume. We can alter the speaking rate of the audio in accordance with the user's preferences (recommended :100).
+Any text submitted by the user will be read aloud by the system, and the audio file will be saved where the user specifies.We are free to enter as much material as we want because there is no word limit.
+
+-->Main Advantage
+TTS helps businesses save time and money by automatically generating sound instead of requiring them to manually record audio files.
+TTS synthesis, you may have any text read aloud in a voice that sounds as natural as possible. The lengthy process of perfecting
+the timbre, smoothness, placement of accents and pauses, intonation, and other aspects of TTS synthesized speech is a time-consuming and unavoidable burden.
+
+->code explination
+Currently, pyttsx3, a Python text-to-speech conversion library, is being used. In contrast to previous libraries, it operates offline and is compatible with Python 2 and Python 3.
+Since we are obtaining a reference to a pyttsx3 engine instance via the pyttsx3.init() factory method.
+We have created an engine property for that instance using the setProperty(name, value) command, which is used to describe rate, voice, and volume.
+Utilize the syntax to say (text: unicode, name: string). puts a request for a sentence to be spoken in line. The parameters set in the command queue before this one are followed when the speech is output. and while runAndWait() waits while processing all commands in the queue, it blocks.
+Applied the save to file(text,format) syntax to save the word as an audio file, and stop() to clearthe queue of commands.The speech recognition library handles the audio file Speech to Text and Realtime Speech to Text operations.
+The audio sources used were Microphone() and AudioFile(FileName), and the audio data was extracted using listen() 

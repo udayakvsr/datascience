@@ -1,0 +1,57 @@
+a = lambda q:q*2
+b = lambda q:q*3
+x = 2
+x = a(x)
+x = b(x)
+x = a(x)
+print(x)
+
+
+
+
+
+# taking input from user
+number = int(input("Enter any number: "))
+
+# prime number is always greater than 1
+if number > 1:
+    for i in range(2, number):
+        print(i)
+        if (number % i) == 0:
+            print(number, "is not a prime number")
+            break
+    else:
+        print(number, "is a prime number")
+
+# if the entered number is less than or equal to 1
+# then it is not prime number
+else:
+    print(number, "is not a prime number")
+
+
+def prmchk(number):
+    # prime number is always greater than 1
+    if number > 1 :
+        if (number % 2) == 0:
+            print(number, "is not a prime number")
+            # If it is not a prime number it will check numbers with which that input number is divisible by.
+            for i in range(1,number+1):
+                if (number % i) == 0:
+                    print(number,"is a divisible",i )               
+        else:
+            print(number, "is a prime number")
+            
+#     if the entered number is less than or equal to 1
+#     then it is not prime number 
+
+    else:
+        print(number, "is not a prime number")
+        
+# taking input from user 
+try:
+    number = int(input("Enter any number: "))
+    prmchk(number)    
+except:
+# If user entered invalid number 
+    print("Please enter valid Number")
+ 

@@ -1,0 +1,219 @@
+---
+title: "DS-510:Final project: Investigate the impact of a number of automobile engine factors "
+author: "Uday"
+date: "2022-11-15"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+## installing packages and utilizing them in the code:
+```{r installing packages setup}
+install.packages("tinytex", repos = "http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+install.packages("tidyr", repos = "http://cran.us.r-project.org")
+install.packages("magrittr", repos = "http://cran.us.r-project.org")
+install.packages("knitr", repos = "http://cran.us.r-project.org")
+install.packages("glmnet", repos = "http://cran.us.r-project.org")
+install.packages("leaps", repos = "http://cran.us.r-project.org")
+install.packages("gvlma", repos = "http://cran.us.r-project.org")
+install.packages("psych", repos = "http://cran.us.r-project.org")
+install.packages("latticeExtra", repos = "http://cran.us.r-project.org")
+install.packages("caret", repos = "http://cran.us.r-project.org")
+library(knitr)
+library(magrittr)
+library(leaps)
+library(gvlma)
+library(glmnet)
+library(psych)
+library(caret)
+library(latticeExtra)
+library(dplyr)
+library(tidyr)
+```
+##Main input auto-mpg.csv file read:
+```{r Main input auto-mpg.csv file read}
+mpgcoredf =  read.csv("C:/Users/Public/Project510/auto-mpg.csv")
+str(mpgcoredf)
+```
+##remodifying of the pandas dataframe
+```{r remodifying of the pandas dataframe}
+names(mpgcoredf) = c("mpg","cylinder","displacement","horsepower","weight","acceleration","model_year","origin","car_name")
+head(mpgcoredf) 
+mpgcoredf$horsepower[mpgcoredf$horsepower=="?"] = NA
+mpgcoredf$horsepower = as.numeric(mpgcoredf$horsepower)
+mpgcoredf$cylinder = as.numeric(mpgcoredf$cylinder)
+str(mpgcoredf)
+```
+##selecting out the actual data which is used for trasformation:
+```{r selecting out the actual data which is used for trasformation}
+actual_df = select(mpgcoredf,mpg,displacement,horsepower,weight,acceleration)
+actual_df = na.omit(actual_df)
+kable(summary(actual_df),row.names = FALSE)
+#Overall charts and  plots of a dataframe : 
+pairs.panels(actual_df,method = "pearson",hist.col ="#00AFBB" ,density = TRUE,ellipses = TRUE)  
+par(mfrow=c(2,2))
+for (i in names(actual_df)) {
+   boxplot(actual_df[,i], names = "names(actual_df[,i])")
+}
+```
+##In the first case, there were 300 split records, while there were 98 last records in the second case:
+```{r first case 300 and second case 98}
+fcase.thrhnd = actual_df[1:300,]
+scase.niteit = na.omit(actual_df[301:398,])
+```
+##Finding displacement model for first case:
+```{r displacement model for first case}
+fcasmdl1.dis = lm(mpg~displacement, data=fcase.thrhnd)
+summary(fcasmdl1.dis)
+ffcasck1_dis = summary(fcasmdl1.dis)
+ffcasck1_dis$r.squared                      
+ffcasck1_dis$adj.r.squared                  
+coef(ffcasck1_dis)                          
+coef(fcasmdl1.dis)                          
+```
+##Finding horsepower model for first case:
+```{r horsepower model for first case}
+fcasmdl1.hrp = lm(mpg~horsepower, data=fcase.thrhnd)
+summary(fcasmdl1.hrp)
+ffcsechk1_hrp = summary(fcasmdl1.hrp)   
+ffcsechk1_hrp$r.squared                      
+ffcsechk1_hrp$adj.r.squared                 
+coef(ffcsechk1_hrp)				 
+coef(fcasmdl1.hrp)				 
+```
+##Finding acceleration model for first case:
+```{r acceleration model for first case}
+fcasmdl1.acc = lm(mpg~acceleration, data=fcase.thrhnd)
+summary(fcasmdl1.acc) 
+ffcaschk1_acc = summary(fcasmdl1.acc)
+ffcaschk1_acc$r.squared 			
+ffcaschk1_acc$adj.r.squared 		
+coef(ffcaschk1_acc)				
+coef(fcasmdl1.acc)				
+```
+##Finding Weight model for first case:
+```{r Weight model for first case}
+fcasmdl1.wght = lm(mpg~weight, data=fcase.thrhnd)
+summary(fcasmdl1.wght) 
+ffcaschk1_wght = summary(fcasmdl1.wght)
+ffcaschk1_wght$r.squared			
+ffcaschk1_wght$adj.r.squared 		
+coef(ffcaschk1_wght)			
+coef(fcasmdl1.wght)		
+```
+##Finding multiple linear regression model for first case:
+```{r multiple linear regression model for first case}
+fcasmlrchkfi = lm(mpg ~ displacement + horsepower + weight + acceleration,data = fcase.thrhnd)
+fincasemlrchk = summary(fcasmlrchkfi)
+fincasemlrchk$r.squared			
+fincasemlrchk$adj.r.squared 		
+summary(fcasmlrchkfi)$coefficient		
+confint(fcasmlrchkfi)
+print(fcasmlrchkfi)
+plot(fcasmlrchkfi)
+```
+##Predictions for second case of MLR model:
+```{r MLR second case prediction}
+scpdt_f = fcasmlrchkfi %>% predict(scase.niteit)  
+data.frame( R2 = R2(scpdt_f, scase.niteit$mpg),
+            RMSE = RMSE(scpdt_f, scase.niteit$mpg),
+            MAE = MAE(scpdt_f, scase.niteit$mpg))
+```
+###Predictions Report for second case MLR model: Even if the outlier is taken out, the assumptions of the linear model are not met, according to the predictions report for the MLR model. However, if the outliers are eliminated, the model does perform better, with an adjusted R-squared ranging from 77% to 80%. This automobile data might perform better with a nonlinear model, in our opinion.
+
+##Finding displacement model residual for first case:
+```{r displacement model residual for first case}
+disfcase1.dist = lm(mpg~displacement, data=fcase.thrhnd)
+fcasedfnl1_resdl = disfcase1.dist$residuals
+plot(fcase.thrhnd$mpg~fcasedfnl1_resdl ,lwd=3, col="yellow",main="Displacement Model residual for first case",ylab = "mpg")
+```
+##Finding linear model residual of displacement for first case:
+```{r linear model residual of displacement for first case}
+qqnorm(resid(fcasmdl1.dis))
+qqline(resid(fcasmdl1.dis))
+plot(density(resid(fcasmdl1.dis)))
+```
+##Finding Histogram of model displacement for first case:
+```{r Histogram of model displacement for first case}
+hist(fcasedfnl1_resdl ,prob=T,breaks=20,main="displacement model histogram",xlab="Residuals")
+lines(density(fcasedfnl1_resdl ),col="brown",lwd=3)
+```
+##Predicting displacement model for second case:
+```{r Predicting displacement model for second case}
+scaspdt_dis1 = fcasmdl1.dis %>% predict(scase.niteit)  
+data.frame( Prediction_DISPLACEMENT_R2 = R2(scaspdt_dis1, scase.niteit$mpg),Prediction_DISPLACEMENT_RMSE = RMSE(scaspdt_dis1 , scase.niteit$mpg),Prediction_DISPLACEMENT_MAE = MAE(scaspdt_dis1, scase.niteit$mpg))
+```
+##A DISPLACEMENT MODEL IS USED IN THIS PREDICTION REPORT: Each estimated value in this output is statistically significant with a p-value of 2.2e-16. It is shown that the MPG vs. displacement plot is not linear and that there is some kind of relationship between the variable and the residual. This model is undoubtedly inadequate. The following data points are outliers, adding up to a total of 112,245,248 on the diagnostic plot. The R square states that only 38% of displacement may account for MPG.
+
+
+##Finding Model of Horsepower Residual for first case:
+```{r Model of Horsepower Residual for first case}
+ffcashrp1_residual = fcasmdl1.hrp$residuals
+plot(fcase.thrhnd$mpg~ffcashrp1_residual ,lwd=3, col="yellow",main="Horsepower Residual for first case",ylab = "mpg")
+```
+##Finding linear horsepower models for first case:
+```{r linear horsepower models for first case}
+qqnorm(resid(fcasmdl1.hrp))
+qqline(resid(fcasmdl1.hrp))
+plot(density(resid(fcasmdl1.hrp)))
+```
+##Finding the horsepower models histogram for first case:
+```{r horsepower models histogram for first case}
+hist(ffcashrp1_residual ,prob=T,breaks=20,main="Horsepower Histogram for first case",xlab="Residuals")
+lines(density(ffcashrp1_residual ),col="brown",lwd=3)
+```
+##Predictions the horsepower model for second case:
+```{r Predictions from the horsepower model for second case}
+scaspdt1_hrp = fcasmdl1.hrp %>% predict(scase.niteit)  
+data.frame( Prediction_HORSEPOWER_R2 = R2(scaspdt1_hrp, scase.niteit$mpg),Prediction_HORSEPOWER_RMSE = RMSE(scaspdt1_hrp, scase.niteit$mpg),Prediction_HORSEPOWER_MAE = MAE(scaspdt1_hrp, scase.niteit$mpg))
+```
+##FOR THE POWER MODEL PROJECT REPORT: The R square after correction is 0.225. This demonstrates that the strategy is incorrect because just 22.5% of horsepower contributes to mpg. Nevertheless, we were able to assess its significance using a p-value of 2.2e-16. HP and MPg have an unbalanced relationship.
+
+
+##Finding the worth of acceleration residual model for first case:
+```{r acceleration residual model for first case}
+ffacasacc1_residual = fcasmdl1.acc$residuals
+plot(fcase.thrhnd$mpg~ffacasacc1_residual ,lwd=3, col="yellow",main="Acceleration Residual for first case",ylab = "mpg")
+```
+##Finding the linear acceleration residual model for first case:
+```{r linear acceleration residual model for first case}
+qqnorm(resid(fcasmdl1.acc))
+qqline(resid(fcasmdl1.acc))
+plot(density(resid(fcasmdl1.acc)))
+```
+##Finding a model of the acceleration histogram for first case:
+```{r model of the acceleration histogram for first case}
+hist(ffacasacc1_residual ,prob=T,breaks=20,main="Acceleration Histogram model for first case",xlab="Residuals")
+lines(density(ffacasacc1_residual ),col="brown",lwd=3)
+```
+##Finding predictions from a model of acceleration for second case:
+```{r predictions from a model of acceleration for second case}
+scasepdtctf1_acc = fcasmdl1.acc %>% predict(scase.niteit)  
+data.frame( Prediction_ACCELERATION_R2 = R2(scasepdtctf1_acc, scase.niteit$mpg),Prediction_ACCELERATION_RMSE = RMSE(scasepdtctf1_acc, scase.niteit$mpg),Prediction_ACCELERATION_MAE = MAE(scasepdtctf1_acc, scase.niteit$mpg))
+```
+##ACCELERATION MODEL PREDICTION REPORT: Each estimated value in this output is statistically significant with a p-value of 2.2e-16. It has been shown that there is no conclusive evidence linking these two variables. It seems as though the residual vs. acceleration figure is in fine shape. In the future, we'll remark on stories of similar nature.
+
+
+##Finding a weight residual model for first case:
+```{r weight residual model for first case}
+ffcasewt1_residual = fcasmdl1.wght$residuals
+plot(fcase.thrhnd$mpg~ffcasewt1_residual ,lwd=3, col="yellow",main="weight residual model for first case",ylab = "mpg")
+```
+##Finding a linear Weight Models for first case:
+```{r linear Weight Models for first case}
+qqnorm(resid(fcasmdl1.wght))
+qqline(resid(fcasmdl1.wght))
+plot(density(resid(fcasmdl1.wght)))
+```
+##Finding a histogram model weight for first case:
+```{r histogram model weight for first case}
+hist(ffcasewt1_residual ,prob=T,breaks=20,main="Histogram model weight for first case",xlab="Residuals")
+lines(density(ffcasewt1_residual ),col="brown",lwd=3)
+```
+##Finding predicted model weights for second case:
+```{r predicted model weights for second case}
+fscasepdit1_wght = fcasmdl1.wght %>% predict(scase.niteit)  
+data.frame( Prediction_WEIGHTMODEL_R2 = R2(fscasepdit1_wght, scase.niteit$mpg),Prediction_WEIGHTMODEL_RMSE = RMSE(fscasepdit1_wght, scase.niteit$mpg),Prediction_WEIGHTMODEL_MAE = MAE(fscasepdit1_wght, scase.niteit$mpg))
+```
+##Report on the Weight Model Projections: The regression findings unequivocally show that our model is sound. It uses a 5% P-value of 2.2e-16. The coefficient of the model is statistically significant in explaining the mpg as a result. This model is the best option because it has the greatest R squared (0.7733) of the available models. Weight accounts for 77.33% of the mpg, per this Rsquared. In order to get the best regression at this point, we compared the R squared adjusted (0.7733>0.7129>0.2127), and we selected the model with the greatest R squared adjusted.
