@@ -1,0 +1,16 @@
+def prmchk(number):  
+    if (number % 2) == 0 and number != 2 or number <= 1:
+        print(number, "is not a prime number")
+        # If it is not a prime number it will check numbers with which that input number is divisible by.
+        for i in range(1,number+1):
+            if (number % i) == 0:
+                print(number,"is a divisible",i )               
+    else:
+        print(number, "is a prime number")
+# taking input from user 
+try:
+    number = int(input("Enter any number: "))
+    prmchk(number)    
+except:
+# If user entered invalid number 
+    print("Please enter valid Number")  

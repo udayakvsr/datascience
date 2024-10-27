@@ -1,0 +1,165 @@
+---
+title: "Examine how various aspects of car engines affect performance."
+author: "Uday"
+date: "2022-11-19"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+##Placing packages in place and using them in the code:
+```{r installing below packages which is used for Ploting}
+install.packages("tinytex", repos = "http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+install.packages("tidyr", repos = "http://cran.us.r-project.org")
+install.packages("magrittr", repos = "http://cran.us.r-project.org")
+install.packages("knitr", repos = "http://cran.us.r-project.org")
+install.packages("glmnet", repos = "http://cran.us.r-project.org")
+install.packages("leaps", repos = "http://cran.us.r-project.org")
+install.packages("gvlma", repos = "http://cran.us.r-project.org")
+install.packages("psych", repos = "http://cran.us.r-project.org")
+install.packages("latticeExtra", repos = "http://cran.us.r-project.org")
+install.packages("caret", repos = "http://cran.us.r-project.org")
+library(knitr)
+library(magrittr)
+library(leaps)
+library(gvlma)
+library(glmnet)
+library(psych)
+library(caret)
+library(latticeExtra)
+library(dplyr)
+library(tidyr)
+```
+##read from main input auto-mpg.csv file
+```{r read from main input auto-mpg.csv file}
+masterdf =  read.csv("C:/Users/Public/FinalProject/auto-mpg.csv")
+str(masterdf)
+```
+##The dataframe has been modified.
+```{r The dataframe has been modified.}
+names(masterdf) = c("mpg","cylinder","displacement","horsepower","weight","acceleration","model_year","origin","car_name")
+masterdf$horsepower[masterdf$horsepower=="?"] = NA
+masterdf$horsepower = as.numeric(masterdf$horsepower)
+masterdf$cylinder = as.numeric(masterdf$cylinder)
+str(masterdf)
+```
+##separating the underlying data from the data that is transformed:
+```{r separating the underlying data}
+master1df = select(masterdf,mpg,displacement,horsepower,weight,acceleration)
+master1df = na.omit(master1df)
+kable(summary(master1df),row.names = FALSE)
+```
+##In the first instance, there were 300 split records, while in the second instance, there were 98 last records:
+```{r first instance 300 and second instance 98}
+first.instance = master1df[1:300,]
+second.instance = na.omit(master1df[301:398,])
+```
+##Displacement model for first instance:
+```{r displacement model}
+firstinstance.dis = lm(mpg~displacement, data=first.instance)
+summary(firstinstance.dis)
+ffirstinstance.dis = summary(firstinstance.dis)
+ffirstinstance.dis$r.squared                      
+ffirstinstance.dis$adj.r.squared                  
+coef(ffirstinstance.dis)                          
+coef(firstinstance.dis)                          
+```
+##Horsepower model for first instance:
+```{r horsepower model}
+firstinstance.hrp = lm(mpg~horsepower, data=first.instance)
+summary(firstinstance.hrp)
+ffirstinstance.hrp = summary(firstinstance.hrp)   
+ffirstinstance.hrp$r.squared                      
+ffirstinstance.hrp$adj.r.squared                 
+coef(ffirstinstance.hrp)				 
+coef(firstinstance.hrp)				 
+```
+##Acceleration model for first instance:
+```{r acceleration model}
+firstinstance.acc = lm(mpg~acceleration, data=first.instance)
+summary(firstinstance.acc) 
+ffirstinstance.acc = summary(firstinstance.acc)
+ffirstinstance.acc$r.squared 			
+ffirstinstance.acc$adj.r.squared 		
+coef(ffirstinstance.acc)				
+coef(firstinstance.acc)				
+```
+##Weight model for first instance:
+```{r Weight model }
+firstinstance.wght = lm(mpg~weight, data=first.instance)
+summary(firstinstance.wght) 
+ffirstinstance.wght = summary(firstinstance.wght)
+ffirstinstance.wght$r.squared			
+ffirstinstance.wght$adj.r.squared 		
+coef(ffirstinstance.wght)			
+coef(firstinstance.wght)		
+```
+##Displacement model residual for first instance:
+```{r Displacement model residual for first instance}
+firstins.dist = lm(mpg~displacement, data=first.instance)
+firstdfn_resdl = firstins.dist$residuals
+plot(first.instance$mpg~firstdfn_resdl ,lwd=3, col="pink",main="Displacement Model residual for first instance",ylab = "mpg")
+```
+##Finding linear model residual of displacement for first instance:
+```{r linear model residual of displacement for first instance}
+qqnorm(resid(firstinstance.dis))
+qqline(resid(firstinstance.dis))
+plot(density(resid(firstinstance.dis)))
+```
+##Finding Histogram of model displacement for first instance:
+```{r Histogram of model displacement for first instance}
+hist(firstdfn_resdl ,prob=T,breaks=20,main="displacement model histogram",xlab="Residuals")
+lines(density(firstdfn_resdl ),col="blue",lwd=3)
+```
+
+##Model of Horsepower Residual for first instance:
+```{r Model of Horsepower Residual for first instance}
+ffcsa_resi = firstinstance.hrp$residuals
+plot(first.instance$mpg~ffcsa_resi ,lwd=3, col="pink",main="Horsepower Residual for first instance",ylab = "mpg")
+```
+##linear horsepower models for first instance:
+```{r linear horsepower models for first instance}
+qqnorm(resid(firstinstance.hrp))
+qqline(resid(firstinstance.hrp))
+plot(density(resid(firstinstance.hrp)))
+```
+##horsepower models histogram for first instance:
+```{r horsepower models histogram for first instance}
+hist(ffcsa_resi ,prob=T,breaks=20,main="Horsepower Histogram for first instance",xlab="Residuals")
+lines(density(ffcsa_resi ),col="blue",lwd=3)
+```
+
+##acceleration residual model for first instance:
+```{r acceleration residual model for first instance}
+fstins_res = firstinstance.acc$residuals
+plot(first.instance$mpg~fstins_res ,lwd=3, col="pink",main="Acceleration Residual for first instance",ylab = "mpg")
+```
+##linear acceleration residual model for first instance:
+```{r linear acceleration residual model for first instance}
+qqnorm(resid(firstinstance.acc))
+qqline(resid(firstinstance.acc))
+plot(density(resid(firstinstance.acc)))
+```
+##model of the acceleration histogram for first instance:
+```{r model of the acceleration histogram for first instance}
+hist(fstins_res ,prob=T,breaks=20,main="Acceleration Histogram model for first instance",xlab="Residuals")
+lines(density(fstins_res ),col="blue",lwd=3)
+```
+
+##Weight residual model for first instance:
+```{r weight residual model for first instance}
+fisins_residual = firstinstance.wght$residuals
+plot(first.instance$mpg~fisins_residual ,lwd=3, col="pink",main="weight residual model for first instance",ylab = "mpg")
+```
+##linear Weight Models for first instance:
+```{r linear Weight Models for first instance}
+qqnorm(resid(firstinstance.wght))
+qqline(resid(firstinstance.wght))
+plot(density(resid(firstinstance.wght)))
+```
+##histogram model weight for first instance:
+```{r histogram model weight for first instance}
+hist(fisins_residual ,prob=T,breaks=20,main="Histogram model weight for first instance",xlab="Residuals")
+lines(density(fisins_residual ),col="blue",lwd=3)
+```

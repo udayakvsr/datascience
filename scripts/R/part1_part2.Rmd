@@ -1,0 +1,216 @@
+# Load required libraries
+library(readr)
+library(ggplot2)
+library(forecast)
+library(tseries)
+library(stats)
+
+# Load the data
+data <- read.csv("C:/Users/Public/2a_Identify_Process.csv", header = FALSE)
+time_series <- data$V1
+
+# Plot the time series data
+plot(time_series, type = 'l', main = 'Time Series Data', xlab = 'Time', ylab = 'Value')
+
+# ACF and PACF plots
+par(mfrow = c(2, 1))
+acf(time_series, lag.max = 30)
+pacf(time_series, lag.max = 30)
+
+# Fit different AR, MA, and ARMA models
+model_ar <- arima(time_series, order = c(1, 0, 0))
+model_ma <- arima(time_series, order = c(0, 0, 1))
+model_arma <- arima(time_series, order = c(1, 0, 1))
+
+# Print summary of model parameters and criteria (AIC, BIC)
+cat("AR Model Summary:\n")
+print(summary(model_ar))
+cat("\nMA Model Summary:\n")
+print(summary(model_ma))
+cat("\nARMA Model Summary:\n")
+print(summary(model_arma))
+
+# Build AR model
+model <- arima(time_series, order = c(1, 0, 0))
+
+# Make forecasts
+forecast_horizon <- 10
+forecast_values <- predict(model, n.ahead = forecast_horizon)$pred
+
+# Plot original time series and forecasts
+plot(time_series, type = 'l', col = 'blue', main = 'AR(1) Model Forecast', xlab = 'Time', ylab = 'Value')
+lines(seq(length(time_series), length(time_series) + forecast_horizon - 1), forecast_values, col = 'red')
+
+# ADF test
+adf_test_result <- adf.test(time_series)
+print('ADF Statistic:', adf_test_result$statistic)
+print('p-value:', adf_test_result$p.value)
+print('Critical Values:')
+print(adf_test_result$critical)
+
+# First-order differencing
+differenced_series <- diff(time_series)
+
+# ADF test on differenced series
+adf_test_result_diff <- adf.test(differenced_series)
+print('ADF Statistic after differencing:', adf_test_result_diff$statistic)
+print('p-value after differencing:', adf_test_result_diff$p.value)
+print('Critical Values after differencing:')
+print(adf_test_result_diff$critical)
+
+# Plot the differenced time series data
+plot(differenced_series, type = 'l', main = 'Differenced Time Series Data', xlab = 'Time', ylab = 'Value')
+
+# Plot ACF
+acf(time_series, lag.max = 30, col = 'blue', main = 'Autocorrelation Function (ACF)')
+
+# Plot PACF
+pacf(time_series, lag.max = 30, col = 'blue', main = 'Partial Autocorrelation Function (PACF)')
+
+# Splitting data into train and test sets
+train_ratio <- 0.8
+train_size <- as.integer(length(time_series) * train_ratio)
+train_data <- time_series[1:train_size]
+test_data <- time_series[(train_size + 1):length(time_series)]
+
+# 'p' and 'q' with your identified ARMA order
+p <- 2
+q <- 1
+
+# Build ARMA model
+arma_model <- arima(time_series, order = c(p, 0, q))
+
+# 'p', 'd', and 'q' with your identified ARIMA order
+p <- 1
+d <- 1
+q <- 1
+
+# Build ARIMA model
+arima_model <- arima(train_data, order = c(p, d, q))
+
+# Calculate AIC for both models
+arma_aic <- AIC(arma_model)
+arima_aic <- AIC(arima_model)
+
+cat("ARMA AIC:", arma_aic, "\n")
+cat("ARIMA AIC:", arima_aic, "\n")
+
+# Plot diagnostics for ARMA model
+tsdiag(arma_model)
+
+# Plot diagnostics for ARIMA model
+tsdiag(arima_model)
+
+# Ljung-Box test for ARMA model residuals
+arma_residuals <- residuals(arma_model)
+arma_ljung_box <- Box.test(arma_residuals, lag = 10, type = 'Ljung-Box')
+
+# Ljung-Box test for ARIMA model residuals
+arima_residuals <- residuals(arima_model)
+arima_ljung_box <- Box.test(arima_residuals, lag = 10, type = 'Ljung-Box')
+
+cat("Ljung-Box Test Results (p-values) for ARMA Model:\n")
+print(arma_ljung_box$p.value)
+cat("\nLjung-Box Test Results (p-values) for ARIMA Model:\n")
+print(arima_ljung_box$p.value)
+
+# Load and inspect data
+data <- read.xlsx("C:/Users/Public/2b_Forecast.xlsx")
+
+# Train/test split
+train_data <- data[1:(nrow(data)-1000), ]
+test_data <- data[(nrow(data)-999):nrow(data), ]
+
+# Model selection and training
+X_train <- train_data$TIMESTAMP
+y_train <- train_data$ITEM_COUNT
+
+model <- randomForest(y_train ~ X_train)
+
+# Forecasting and evaluation
+X_test <- test_data$TIMESTAMP
+y_test <- test_data$ITEM_COUNT
+
+predicted_item_count <- predict(model, newdata = data.frame(X_train = X_test))
+
+# Evaluate model performance (MAPE)
+mape <- mean(abs((y_test - predicted_item_count) / y_test)) * 100
+cat("MAPE:", mape, "%\n")
+
+# Residual analysis
+residuals <- y_test - predicted_item_count
+
+# Plot residuals
+plot(test_data$TIMESTAMP, residuals, col = 'red', main = 'Residual Analysis', xlab = 'Time', ylab = 'Residuals')
+abline(h = 0, col = 'black', lty = 2)
+
+# Histogram of residuals
+hist(residuals, breaks = 30, col = 'blue', main = 'Histogram of Residuals', xlab = 'Residuals', ylab = 'Frequency')
+
+# Conclusion and interpretation
+# Plot forecasts vs. actuals
+plot(y_test, col = 'blue', type = 'l', main = 'Forecast vs Actual', xlab = 'Time', ylab = 'item_count')
+lines(predicted_item_count, col = 'red')
+
+# Residual Plot
+residuals <- y_test - predicted_item_count
+plot(predicted_item_count, residuals, col = 'blue', main = 'Residual Plot', xlab = 'Predicted Values', ylab = 'Residuals')
+abline(h = 0, col = 'red', lty = 2)
+
+# Calculate Residuals
+residuals <- residuals(y_test - predicted_item_count)
+
+# Residual Statistics
+residual_mean <- mean(residuals)
+residual_variance <- var(residuals)
+residual_std_dev <- sd(residuals)
+
+# Residual Distribution
+hist(residuals, breaks = 30, col = 'blue', main = 'Residual Distribution', xlab = 'Residuals', ylab = 'Frequency')
+
+# Calculate MAPE
+calculate_mape <- function(actual, predicted) {
+  return (100 / length(actual)) * sum(abs((actual - predicted) / actual))
+}
+
+mape <- calculate_mape(y_test, predicted_item_count)
+cat("MAPE:", mape, "%\n")
+
+# Plot Actual vs Predicted Values
+plot(y_test, col = 'blue', type = 'l', main = 'Actual vs Predicted Values', xlab = 'Time', ylab = 'Value')
+lines(predicted_item_count, col = 'red')
+
+# Rolling forecast function
+rolling_forecast <- function(data, window_size, forecast_horizon) {
+  model <- lm(ACTUAL_DELIVERY_MINUTES ~ USER_LAT + USER_LONG + VENUE_LAT + VENUE_LONG + 
+                ESTIMATED_DELIVERY_MINUTES + CLOUD_COVERAGE + TEMPERATURE + WIND_SPEED + PRECIPITATION, data = data)
+  
+  for (i in 1:(nrow(data) - window_size - forecast_horizon + 1)) {
+    window_data <- data[i:(i + window_size - 1), ]
+    next_data <- data[(i + window_size):(i + window_size + forecast_horizon - 1), ]
+    
+    # Train the model on the current window
+    model <- lm(ACTUAL_DELIVERY_MINUTES ~ USER_LAT + USER_LONG + VENUE_LAT + VENUE_LONG + 
+                  ESTIMATED_DELIVERY_MINUTES + CLOUD_COVERAGE + TEMPERATURE + WIND_SPEED + PRECIPITATION, data = window_data)
+    
+    # Predict the next 'forecast_horizon' points
+    predictions <- predict(model, newdata = next_data)
+    
+    # Update data with new predictions
+    data[(i + window_size):(i + window_size + forecast_horizon - 1), 'ACTUAL_DELIVERY_MINUTES'] <- predictions
+  }
+  
+  return(data)
+}
+
+# Set your desired window size and forecast horizon
+window_size <- 30
+forecast_horizon <- 7
+
+# Perform rolling forecast
+result_data <- rolling_forecast(your_data_cleaned, window_size, forecast_horizon)
+
+# Plot actual delivery times
+plot(test_data$TIMESTAMP, test_data$ACTUAL_DELIVERY_MINUTES, col = 'blue', type = 'l', main = 'Actual vs Forecasted Delivery Times', xlab = 'Time', ylab = 'Delivery Time (Minutes)')
+lines(result_data$TIMESTAMP, result_data$ACTUAL_DELIVERY_MINUTES, col = 'red')
+

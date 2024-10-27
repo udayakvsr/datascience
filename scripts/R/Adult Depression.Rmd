@@ -1,0 +1,190 @@
+---
+title: "Adult Depression"
+author: "uday"
+date: "2022-11-20"
+output: html_document
+---
+
+```{r installing below packages which is used in the code}
+#Installing the packages listed below that the code requires
+install.packages("tidyr", repos = "http://cran.us.r-project.org")
+install.packages("factoextra", repos="http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+install.packages("knitr", repos = "http://cran.us.r-project.org")
+install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+
+#The libraries being loaded
+library(factoextra)
+library(tidyr)
+library(dplyr)
+library(lubridate)
+library(stringr) 
+library(knitr)
+library(ggplot2)
+```
+## Project Overview
+
+This source dataset serves as an indicator for the Let's Get Healthy California program at "https://letsgethealthy.ca.gov/." The percentage of adults in California who have ever been told they have a depressive disorder is shown in the table below. Only California-related data are present. The Behavioral Risk Factor Surveillance Survey in California provided the information (BRFSS). The California BRFSS is a yearly cross-sectional telephone survey on health-related topics that gathers information on California citizens' health-related risk behaviors, chronic health issues, and usage of preventative services. Sacramento State is hired by CDPH to carry out the BRFSS. The basis for this indicator is the following query: "Has a doctor, nurse, or other health care provider EVER informed you that you have a depressive disorder? (including depression, major depression, dysthymia, or minor depression)
+
+## Source of the Data
+
+<https://data.chhs.ca.gov/dataset/5a281abf-1730-43b0-b17b-ac6a35db5760/resource/724c6fd8-a645-4e52-b63f-32631a20db5d/download/adult-depression-lghc-indicator-24.csv>
+
+## Project Mission:
+In this study, I will analyze each case of adult depression in California between 2012 and 2018 by age, gender, and race/ethnicity and will draw important conclusions from the dataset.
+
+## Result of the Project:
+1) To determine the data's statistics for age, gender, and race.
+2) Discovering linear regression for age, gender, and race.
+3) finding polynomial regressions for age, gender, and race.
+4) Visualizing the data for age, gender, and race.
+5) scanning the data for clustering for age, gender, and race.
+
+```{r Implementing the logic}
+
+#Reading the data into a dataframe
+adultdepdf =  read.csv("C:/Users/Public/adult-depression-lghc-indicator-24.csv")
+
+#Making the values lower case and displaying five records 
+names(adultdepdf) = tolower(names(adultdepdf))
+head(adultdepdf)
+
+#Renaming the columns
+names(adultdepdf) = c("year","strata","strata_name","frequency","weighted_frequency","percent","lower_95%cl","upper_95%cl")
+
+#Removed "na" entries from the dataframe by filtering
+adultdepdf = na.omit(adultdepdf)
+
+#Displaying the summary of the dataframe
+summary(adultdepdf)
+
+#Filtering the unwanted columns
+retrndf = subset(adultdepdf, strata!='Total')
+
+#Logical selection of the necessary columns, then grouping.
+retrndf1 =  retrndf %>% select(frequency, year,strata,strata_name) %>%
+  group_by(frequency, year,strata,strata_name)
+
+#Selected only Data related to Age in a dataframe
+retrndf2 = subset(retrndf1, strata =='Age')
+
+#The age dataframe is grouped and arranged.
+retrndf3 = retrndf2 %>%
+  group_by(year) %>% 
+  arrange(desc(frequency))
+
+#Summarizing the Age Statistics
+kable(summary(select(retrndf3,frequency,year)),row.names = FALSE,caption = "Age Statistics")
+
+#age-related linear regression
+ages_lre = lm(frequency~year, data = retrndf3)
+summary(ages_lre)
+
+#age-related polynomial regression
+lm(frequency ~ poly(year, 2, raw = TRUE),data = retrndf3) 
+
+#age-related plot
+agepltdf = ggplot(retrndf3, aes(x=year, y= frequency)) +
+  geom_line(aes(color=strata_name, linetype = strata_name)) +
+   labs(title = "Age-specific prevalence of depression from 2012 to 2018", subtitle = "California adults in the USA",
+ caption = "California Behavioral Risk Factor Surveillance Survey") +
+ xlab("Year") +
+ ylab ("Diagnoses of depression frequency by age group") +
+    scale_color_manual(values = c("blue", "black","pink", "red", "brown")) +
+    theme_minimal()+
+    theme(legend.position = "right", 
+          plot.caption = element_text(hjust = 0.5),
+          plot.title = element_text(hjust = 0.5,size=16),
+          text = element_text(size=14))+
+    scale_fill_brewer(palette="Set3") 
+
+agepltdf 
+
+#age-related clustering
+clstrdf = select(retrndf3,year,frequency)
+clstrdfm = kmeans(clstrdf, centers = 4)
+fviz_cluster(clstrdfm, data = clstrdf)
+
+#Selected only Data related to Race-Ethnicity in a dataframe
+racedf = subset(retrndf1, strata =='Race-Ethnicity')
+
+#The Race-Ethnicity dataframe is grouped and arranged.
+racedf1 = racedf %>%
+  group_by(year) %>% 
+  arrange(desc(frequency))
+
+#Summarizing the Race-Ethnicity Statistics
+kable(summary(select(racedf1,frequency,year)),row.names = FALSE,caption = "Race Statistics")
+
+#Race-related linear regression
+Race_lre = lm(frequency~year, data = racedf1)
+summary(Race_lre)
+
+#Race-related polynomial regression
+lm(frequency ~ poly(year, 2, raw = TRUE),data = racedf1) 
+
+#Race-related plot
+racepltdf = ggplot(racedf1, aes(x=year, y= frequency)) +
+  geom_line(aes(color=strata_name, linetype = strata_name)) +
+   labs(title = "Race-specific prevalence of depression from 2012 to 2018", subtitle = "California adults in the USA",
+ caption = "California Behavioral Risk Factor Surveillance Survey") +
+ xlab("Year") +
+ ylab ("Diagnoses of depression frequency by Race group") +
+    scale_color_manual(values = c("red", "green","purple", "yellow", "black")) +
+    theme_minimal()+
+    theme(legend.position = "right", 
+          plot.caption = element_text(hjust = 0.5),
+          plot.title = element_text(hjust = 0,size=16),
+          text = element_text(size=14))+
+    scale_fill_brewer(palette="Set3") 
+
+racepltdf 
+
+#Race-related clustering
+raceclstrdf = select(racedf1,year,frequency)
+raceclstrdfm = kmeans(raceclstrdf, centers = 4)
+fviz_cluster(raceclstrdfm, data = raceclstrdf)
+
+
+#Selected only Data related to gender in a dataframe
+genderdf = subset(retrndf1, strata =='Sex')
+
+#The gender dataframe is grouped and arranged.
+genderdf1 = genderdf %>%
+  group_by(year) %>% 
+  arrange(desc(frequency))
+
+#Summarizing the gender Statistics
+kable(summary(select(genderdf1,frequency,year)),row.names = FALSE,caption = "Gender Statistics")
+
+#gender-related linear regression
+gender_lre = lm(frequency~year, data = genderdf1)
+summary(gender_lre)
+
+#gender-related polynomial regression
+lm(frequency ~ poly(year, 2, raw = TRUE),data = genderdf1) 
+
+#gender-related plot
+gndrpltdf = ggplot(genderdf1, aes(x=year, y= frequency)) +
+  geom_line(aes(color=strata_name, linetype = strata_name)) +
+   labs(title = "Gender-specific prevalence of depression from 2012 to 2018", subtitle = "California adults in the USA",
+ caption = "California Behavioral Risk Factor Surveillance Survey") +
+ xlab("Year") +
+ ylab ("Diagnoses of depression frequency by Gender group") +
+    scale_color_manual(values = c("violet", "green")) +
+    theme_minimal()+
+    theme(legend.position = "right", 
+          plot.caption = element_text(hjust = 0.5),
+          plot.title = element_text(hjust = 0.5,size=16),
+          text = element_text(size=14))+
+    scale_fill_brewer(palette="Set3") 
+
+gndrpltdf 
+
+#gender-related clustering
+gndrclstrdf = select(genderdf1,year,frequency)
+gndrclstrdfm = kmeans(gndrclstrdf, centers = 4)
+fviz_cluster(gndrclstrdfm, data = gndrclstrdf)
+
+
+```

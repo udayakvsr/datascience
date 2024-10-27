@@ -1,0 +1,165 @@
+---
+title: "U.S. Food Imports"
+author: "uday"
+date: "2022-11-19"
+output: html_document
+---
+
+```{r installing below packages which is used in the code}
+install.packages("tidyr", repos = "http://cran.us.r-project.org")
+install.packages("factoextra", repos="http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+install.packages("knitr", repos = "http://cran.us.r-project.org")
+install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+library(factoextra)
+library(tidyr)
+library(dplyr)
+library(lubridate)
+library(stringr) 
+library(knitr)
+library(ggplot2)
+```
+
+## Project Introduction
+
+American consumers need a wide selection of high-quality, convenient foods. The American food basket represents an increasing share of tropical crops, spices, and imported gourmet goods as Americans have become wealthier and more ethnically diverse. Seasonal and climatic factors drive U.S. imports of popular types of fruits and vegetables and tropical products, such as cocoa and coffee. Additionally, a significant portion of U.S. imports can be attributed to intra-industry trade, in which American agricultural-processing companies outsource some of their operations overseas and import goods that have undergone varying degrees of processing from their foreign-market subsidiaries.
+
+## Data Source 
+
+<https://catalog.data.gov/dataset/u-s-food-imports>
+
+## Project Objective
+By analyzing the aforementioned data, we will be able to determine the factual data, such as the amount of growth and income that occurred each year for each food category.
+
+## Project Outcomes
+1)To find statistics of the data.
+2)Finding linear regression.
+3)polynomial regression discovery.
+4)Plotting the data.
+5)looking for clustering in data.
+
+```{r Actual Code}
+
+#Reading the data into a dataframe
+coredf =  read.csv("C:/Users/Public/Food_data.csv")
+
+#The dataframe has been modified
+coredf = coredf %>% rename("id" = "X","Item_Type" = "X.1","Amount_Type" = "X.2","2021" = "X2021", "2020" = "X2020", "2019" = "X2019","2018" = "X2018","2017" = "X2017","2016" = "X2016","2015" = "X2015","2014" = "X2014","2013" = "X2013","2012" = "X2012","2011" = "X2011","2010" = "X2010","2009" = "X2009","2008" = "X2008","2007" = "X2007","2006" = "X2006","2005" = "X2005","2004" ="X2004","2003" = "X2003","2002" = "X2002","2001" = "X2001","2000" = "X2000","1999" = "X1999", "Food_categories" = "Year")
+
+#Dataframe structure before transformation 
+str(coredf)
+
+#Transforming the dataframe with structure
+
+coredf1 = gather(coredf, key = "Year", value = "Amount", "2021", "2020", "2019","2018","2017","2016","2015","2014","2013","2012","2011","2010","2009","2008","2007","2006","2005","2004","2003","2002","2001","2000","1999")
+
+
+#Renaming the columns with the the actual values
+coredf1$Food_categories[coredf1$Food_categories == 'Total foods 1/'] = 'Total foods'
+coredf1$Food_categories[coredf1$Food_categories == 'Subtotal foods 4/'] = 'Subtotal foods'
+
+#Casting the values with desired types
+coredf1$Year = as.numeric(coredf1$Year)
+coredf1$Amount = gsub(",", "", coredf1$Amount)  
+coredf1$Amount = as.double(coredf1$Amount)
+
+#Dataframe structure after transformation 
+str(coredf1)
+
+#Redefining and removal of the NA values from the dataframe
+master1df = select(coredf1,id,Year,Item_Type,Amount,Food_categories)
+master1df = na.omit(master1df)
+
+#Details of Food categories and its item types:
+distinct(master1df, Food_categories,Item_Type)
+
+#Partitioning the master dataframe based on Food categories
+Total_foods = subset(master1df, Food_categories=='Total foods')
+#Total Food dataframe statistics
+kable(summary(select(Total_foods,id,Year,Amount)),row.names = FALSE,caption = "Total foods")
+
+Foods = subset(master1df, Food_categories== "Foods")
+#Foods dataframe statistics
+kable(summary(select(Foods,id,Year,Amount)),row.names = FALSE,caption = "Foods")
+
+Subtotal_foods = subset(master1df, Food_categories== "Subtotal foods")
+#Subtotal_foods dataframe statistics
+kable(summary(select(Subtotal_foods,id,Year,Amount)),row.names = FALSE,caption = "Subtotal foods")
+
+#Finding linear regression of each Food categories
+
+lmTotal_foods = lm(Amount~Year, data = Total_foods)
+#linear regression of Total foods category
+summary(lmTotal_foods)
+
+lmall_foods = lm(Amount~Year, data = Foods)
+#linear regression of Food category
+summary(lmall_foods)
+
+lmSubtotal_foods = lm(Amount~Year, data = Subtotal_foods)
+#linear regression of Subtotal foods category
+summary(lmSubtotal_foods)
+
+#Polynomial regression discovery for each Food categories
+
+#Logic of polynomial regression of Total foods category
+lm(Amount ~ poly(Year, 2, raw = TRUE),data = Total_foods) 
+#Logic of polynomial regression of Food category
+lm(Amount ~ poly(Year, 2, raw = TRUE),data = Foods)
+#Logic of polynomial regression of Subtotal foods category
+lm(Amount ~ poly(Year, 2, raw = TRUE),data = Subtotal_foods)
+
+#Plotting the data for each Food categories
+
+#Logic for Plotting Year vs Amount of Total foods category
+ggplot(Total_foods,aes(x=Year,y=Amount)) +geom_line(size=1.5) +
+    labs(x = "Year", y = "Amount",caption="US$ value of Total foods imports") +
+    ggtitle(paste0("Food Imports in Million $"))+
+    theme_minimal()+
+    theme(legend.position = "right", 
+          plot.caption = element_text(hjust = 0.5),
+          plot.title = element_text(hjust = 0.5,size=16),
+          text = element_text(size=14))+
+    scale_fill_brewer(palette="Set3") 
+
+#Logic for Plotting Year vs Amount of Foods category
+ggplot(Foods,aes(x=Year,y=Amount)) +geom_line(size=1.5) +
+    labs(x = "Year", y = "Amount",caption="US$ value of Foods(Live meat animals,Meats,Fish,shellfish,Dairy,Vegetables,Fruits,Nuts,Coffee,tea,spices,Grains,Vegetableoils,Sugarcandy,Cocoa,chocolate,Other edible)") +
+    ggtitle(paste0("Total Food in Million $"))+
+    theme_minimal()+
+    theme(legend.position = "right", 
+          plot.caption = element_text(hjust = 0),
+          plot.title = element_text(hjust = 0.5,size=16),
+          text = element_text(size=14))+
+    scale_fill_brewer(palette="Set3") 
+
+#Logic for Plotting Year vs Amount of Subtotal foods category
+ggplot(Subtotal_foods,aes(x=Year,y=Amount)) +geom_point(size=1.5) +
+    labs(x = "Year", y = "Amount",caption="US$ value of Subtotal foods") +
+    ggtitle(paste0("Subtotal(Animals,Plants,Beverages) foods in Million $"))+
+    theme_minimal()+
+    theme(legend.position = "right", 
+          plot.caption = element_text(hjust = 0.5),
+          plot.title = element_text(hjust = 0.5,size=16),
+          text = element_text(size=14))+
+    scale_fill_brewer(palette="Set3") 
+
+
+#Looking for clustering in data based on for each Food categories
+
+#Total_foods clustering
+kdf = select(Total_foods,Year,Amount)
+km = kmeans(kdf, centers = 4)
+fviz_cluster(km, data = kdf)
+
+#Foods clustering
+kdf1 = select(Foods,Year,Amount)
+km1 = kmeans(kdf1, centers = 4)
+fviz_cluster(km1, data = kdf1)
+
+#Subtotal foods clustering
+kdf2 = select(Subtotal_foods,Year,Amount)
+km2 = kmeans(kdf2, centers = 4)
+fviz_cluster(km2, data = kdf2)
+
+```

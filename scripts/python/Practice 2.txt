@@ -1,0 +1,61 @@
+1)sum and average of digits present in a string
+
+def AvgSum(chk):
+    tot = 0
+    cnt = 0
+    for i in chk:
+        if (i.isdigit()):
+            i = int(i)
+            tot = tot + i
+            cnt = cnt + 1
+    return tot,cnt
+
+a = "123test456"
+fin = AvgSum(a)[0]/AvgSum(a)[1]
+print(fin)
+
+2)reverse a give string
+
+def rev(chk):
+    tot = ""
+    for i in range((len(chk)-1),-1,-1):
+        tot = tot+chk[i]
+    return tot
+    
+a = "123test456"
+fin = rev(a)
+print(fin)
+
+3)split a string on a specific charcater
+
+test = "raja$king$queen$prince"
+out = test.split("$")
+print(out)
+
+4)remove whitespace from left,right or bothsides of a string
+
+rspc = "raja    "
+lspc = "    king"
+bothspc = "   queen    "
+print(rspc.rstrip(" "))
+print(lspc.lstrip(" "))
+print(bothspc.strip(" "))
+
+5)find last position of given substring
+
+rspc = "python"
+fin = len(rspc)-1
+print(fin)
+print(rspc[fin])
+
+6)remove all characters from string excepts integers
+def num(chk):
+    tot = ""
+    for i in chk:
+        if (i.isdigit()):
+            tot = tot + i
+    return tot
+
+a = "123test456"
+fin = num(a)
+print(fin)
